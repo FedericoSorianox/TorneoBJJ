@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+/* Custom base styles for zero-scroll apps */
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+  /* Require intentional scroll containers */
+  margin: 0;
+  padding: 0;
+  background-color: #0f172a;
+  /* Slate 900 */
+  color: #f8fafc;
+  /* Slate 50 */
+}
