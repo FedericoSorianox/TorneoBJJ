@@ -25,8 +25,10 @@ const allowedOrigins = [
     "http://127.0.0.1:5175",
     "http://localhost:5176",
     "http://127.0.0.1:5176",
-    "https://app.the-basgers.com", // Netlify Production URL
-    "http://app.the-basgers.com"
+    "https://app.the-basgers.com", // Old Production URL
+    "http://app.the-basgers.com",
+    "https://torneobjj.netlify.app", // New Netlify URL
+    "http://torneobjj.netlify.app"
 ];
 
 const io = new Server(server, {
