@@ -1,6 +1,6 @@
 [build]
-  command = "CI=false npm run build"
-  publish = "dist"
+  command = "CI=false npm run build --workspace=client"
+  publish = "client/dist"
 
 [context.production.environment]
   VITE_API_URL = "https://torneos-bjj-production.up.railway.app/api"
