@@ -69,6 +69,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
             token: generateToken(user.id, user.role)
         });
     } else {
+        console.log(`Login failed for username: ${username}. User found: ${!!user}`);
         res.status(400).json({ message: 'Invalid credentials' });
     }
 };
