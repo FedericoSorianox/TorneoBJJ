@@ -5,6 +5,8 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import AthleteDetailModal from '../components/AthleteDetailModal';
+import type { AthleteData } from '../components/AthleteDetailModal';
 
 interface Athlete {
     _id: string;
@@ -170,6 +172,27 @@ const AthleteManager = () => {
         }
     };
 
+    const [selectedAthlete, setSelectedAthlete] = useState<AthleteData | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const handleViewAthlete = (athlete: Athlete) => {
+        // Map local Athlete to AthleteData
+        // Local Athlete (lines 9-20) has: _id, name, academy, belt, weight, gender, age, photo, balance, birthDate
+        // AthleteData (Modal) needs: _id, name, nickname, academy, belt, weight, gender, age, photo, stats, rankingPoints, balance
+
+        // We might be missing stats in the list view response? 
+        // If necessary we can pass what we have, or fetch details. 
+        // Assuming list view has basic info. Modal handles missing stats gracefully.
+
+        const data: AthleteData = {
+            ...athlete,
+            role: 'athlete' // Add if needed or ignore
+        } as unknown as AthleteData;
+
+        setSelectedAthlete(data);
+        setIsModalOpen(true);
+    };
+
     return (
         <div className="p-8 h-full flex flex-col">
             <Link to="/" className="text-slate-400 hover:text-white mb-4 w-fit">&larr; {t('common.backHome')}</Link>
@@ -179,7 +202,11 @@ const AthleteManager = () => {
                     <h2 className="text-3xl font-bold mb-6">{t('athletes.title')}</h2>
                     <div className="space-y-4">
                         {(Array.isArray(athletes) ? athletes : []).map(a => (
-                            <div key={a._id} className="flex justify-between items-center bg-slate-900 p-4 rounded border border-slate-700">
+                            <div
+                                key={a._id}
+                                className="flex justify-between items-center bg-slate-900 p-4 rounded border border-slate-700 hover:bg-slate-850 transition cursor-pointer group"
+                                onClick={() => handleViewAthlete(a)}
+                            >
                                 <div className="flex items-center gap-4">
                                     {a.photo ? (
                                         <img src={`http://localhost:5001${a.photo}`} alt={a.name} className="w-12 h-12 rounded-full object-cover border border-slate-600" />
@@ -189,13 +216,13 @@ const AthleteManager = () => {
                                         </div>
                                     )}
                                     <div>
-                                        <div className="font-bold text-xl">{a.name}</div>
+                                        <div className="font-bold text-xl group-hover:text-blue-400 transition">{a.name}</div>
                                         <div className="text-slate-400 text-sm">{a.academy} • {a.belt} • {a.weight}kg</div>
                                         <div className="text-yellow-500 text-xs font-bold mt-1">🟡 {a.balance || 0} pts</div>
                                     </div>
                                 </div>
                                 {user?.role === 'admin' && (
-                                    <div className="flex gap-4">
+                                    <div className="flex gap-4" onClick={(e) => e.stopPropagation()}>
                                         <button onClick={async () => {
                                             const amount = prompt("Enter points to redeem:");
                                             if (amount && !isNaN(Number(amount))) {
@@ -309,6 +336,12 @@ const AthleteManager = () => {
                     </div>
                 )}
             </div>
+
+            <AthleteDetailModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                athlete={selectedAthlete}
+            />
         </div >
     );
 };
