@@ -11,6 +11,7 @@ import matchRoutes from './routes/matchRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import authRoutes from './routes/authRoutes';
 import { registerMatchHandlers } from './handlers/matchHandler';
+import { seedAdmin } from './utils/seedAdmin';
 
 dotenv.config();
 
@@ -90,8 +91,9 @@ server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 
     // Connect to DB after server is running
-    connectDB().then(() => {
+    connectDB().then(async () => {
         console.log('MongoDB Connected successfully');
+        await seedAdmin();
     }).catch(err => {
         console.error('MongoDB Connection Failed:', err);
     });
