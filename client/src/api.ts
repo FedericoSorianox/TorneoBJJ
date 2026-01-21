@@ -39,5 +39,6 @@ export const addAthleteToCategory = (catId: string, athleteId: string) => api.po
 export const generateBracket = (catId: string) => api.post(`/categories/${catId}/bracket`).then(res => res.data);
 export const getBracket = (catId: string) => api.get(`/categories/${catId}/bracket`).then(res => res.data);
 export const getLeaderboard = () => api.get('/athletes/leaderboard').then(res => res.data);
+export const registerUser = (data: any) => api.post('/auth/register', data).then(res => res.data);
 
 export default api;

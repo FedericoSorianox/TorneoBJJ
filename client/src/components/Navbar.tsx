@@ -42,7 +42,12 @@ const Navbar = () => {
                                 {user.username} ({user.role})
                             </span>
                             {user.role === 'admin' && (
-                                <span className="text-xs bg-red-600 text-white px-2 py-1 rounded mr-4">Admin</span>
+                                <div className="flex items-center">
+                                    <Link to="/users/new" className="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded mr-4">
+                                        + User
+                                    </Link>
+                                    <span className="text-xs bg-red-600 text-white px-2 py-1 rounded mr-4">Admin</span>
+                                </div>
                             )}
                             <button
                                 onClick={handleLogout}

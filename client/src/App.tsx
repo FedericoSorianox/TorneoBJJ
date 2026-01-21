@@ -10,6 +10,7 @@ import AthleteManager from './pages/AthleteManager'
 import BracketView from './pages/BracketView'
 import Leaderboard from './pages/Leaderboard'
 import Login from './pages/Login'
+import UserCreate from './pages/UserCreate'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
 import { AuthProvider } from './contexts/AuthContext'
@@ -37,7 +38,7 @@ function App() {
         <Toaster position="top-right" />
         <ErrorBoundary>
           <Navbar />
-          <div className="flex-grow">
+          <div className="flex-grow overflow-auto">
             <Routes>
               <Route path="/login" element={<Login />} />
 
@@ -51,6 +52,7 @@ function App() {
                 <Route path="/athletes" element={<AthleteManager />} />
                 <Route path="/bracket/:id" element={<BracketView />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/users/new" element={<UserCreate />} />
               </Route>
             </Routes>
           </div>
