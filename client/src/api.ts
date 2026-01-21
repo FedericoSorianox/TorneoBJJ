@@ -36,7 +36,7 @@ export const getCategoryById = (id: string) => api.get(`/categories/${id}`).then
 export const createCategory = (data: any) => api.post('/categories', data).then(res => res.data);
 export const deleteCategory = (id: string) => api.delete(`/categories/${id}`).then(res => res.data);
 export const addAthleteToCategory = (catId: string, athleteId: string) => api.post(`/categories/${catId}/athletes`, { athleteId }).then(res => res.data);
-export const generateBracket = (catId: string) => api.post(`/categories/${catId}/bracket`).then(res => res.data);
+export const generateBracket = (catId: string) => api.post(`/categories/${catId}/bracket`, {}).then(res => res.data);
 export const getBracket = (catId: string) => api.get(`/categories/${catId}/bracket`).then(res => res.data);
 export const getLeaderboard = () => api.get('/athletes/leaderboard').then(res => res.data);
 export const registerUser = (data: any) => api.post('/auth/register', data).then(res => res.data);

@@ -78,7 +78,7 @@ export const generateBracketEndpoint = async (req: Request, res: Response) => {
         if (athletes.length < 2) return res.status(400).json({ error: 'Not enough athletes' });
 
         const tournament = await mongoose.model('Tournament').findById(category.tournamentId);
-        const { eliminationType = tournament?.defaultElimination || 'SingleElimination' } = req.body;
+        const { eliminationType = tournament?.defaultElimination || 'SingleElimination' } = req.body || {};
 
         const athleteIds = athletes.map((id: any) => id.toString());
         let structure: any[];
