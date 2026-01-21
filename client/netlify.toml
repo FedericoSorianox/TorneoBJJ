@@ -3,7 +3,7 @@
   publish = "client/dist"
 
 [context.production.environment]
-  VITE_API_URL = "https://torneos-bjj-production.up.railway.app/api"
+  VITE_API_URL = "https://torneobjjbackend.up.railway.app/api"
 
 [[redirects]]
   from = "/*"
