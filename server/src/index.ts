@@ -82,8 +82,19 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 5001;
 
-connectDB().then(() => {
-    server.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
+// Health check endpoint (No DB required)
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date() });
+});
+
+// Start Server immediately
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+
+    // Connect to DB after server is running
+    connectDB().then(() => {
+        console.log('MongoDB Connected successfully');
+    }).catch(err => {
+        console.error('MongoDB Connection Failed:', err);
     });
 });
