@@ -88,9 +88,21 @@ const TournamentDetail = () => {
                     {tournament && (
                         <div className="mt-2 text-slate-400">
                             <p>{tournament.date ? format(addMinutes(parseISO(tournament.date), new Date().getTimezoneOffset()), 'PP') : ''} • {tournament.location}</p>
-                            <span className="inline-block mt-1 px-2 py-0.5 rounded bg-blue-900 text-blue-200 text-xs uppercase tracking-wider">
-                                {tournament.status}
-                            </span>
+                            <div className="flex gap-2 mt-2">
+                                <span className="inline-block px-2 py-0.5 rounded bg-blue-900 text-blue-200 text-xs uppercase tracking-wider">
+                                    {tournament.status}
+                                </span>
+                                {tournament.type === 'Custom' && (
+                                    <span className="inline-block px-2 py-0.5 rounded bg-purple-900 text-purple-200 text-xs uppercase tracking-wider">
+                                        Custom Rules
+                                    </span>
+                                )}
+                            </div>
+                            {tournament.customRules && (
+                                <div className="mt-4 p-4 bg-purple-900/20 border border-purple-500/30 rounded-lg text-sm text-purple-200">
+                                    <strong>Rules:</strong> {tournament.customRules}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -143,7 +155,14 @@ const TournamentDetail = () => {
                             {user?.role === 'admin' && (
                                 <div className="flex gap-2">
                                     <select className="flex-1 bg-slate-900 p-1 text-sm rounded border border-slate-600"
-                                        onChange={(e) => handleAddAthlete(cat._id, e.target.value)} defaultValue="">
+                                        onChange={(e) => {
+                                            if (e.target.value) {
+                                                handleAddAthlete(cat._id, e.target.value);
+                                                e.target.value = ''; // Reset immediately for visual feedback
+                                            }
+                                        }}
+                                        value="" // Force controlled value to empty to ensures "Add Athlete" is always selected
+                                    >
                                         <option value="" disabled>{t('category.form.addAthlete')}</option>
                                         {athletes.filter(a => !(cat.athleteIds || []).includes(a._id)).map(a => (
                                             <option key={a._id} value={a._id}>{a.name}</option>

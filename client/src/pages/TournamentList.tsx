@@ -11,6 +11,8 @@ interface Tournament {
     date: string;
     location: string;
     status: string;
+    type?: string;
+    customRules?: string;
 }
 
 const TournamentList = () => {
@@ -48,6 +50,11 @@ const TournamentList = () => {
                             <div className="mt-4 capitalize px-3 py-1 bg-slate-900 inline-block rounded text-sm text-slate-300 font-mono">
                                 {tour.status}
                             </div>
+                            {tour.type === 'Custom' && (
+                                <div className="ml-2 mt-4 capitalize px-3 py-1 bg-purple-900 inline-block rounded text-sm text-purple-200 font-mono">
+                                    Custom
+                                </div>
+                            )}
                         </Link>
                         <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             {user?.role === 'admin' && (

@@ -11,7 +11,9 @@ const TournamentCreate = () => {
         name: '',
         date: '',
         location: '',
-        defaultElimination: 'SingleElimination'
+        defaultElimination: 'SingleElimination',
+        type: 'Standard',
+        customRules: ''
     });
 
     const validateForm = () => {
@@ -99,6 +101,48 @@ const TournamentCreate = () => {
                             onChange={e => setForm({ ...form, location: e.target.value })}
                             required
                         />
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-700">
+                        <label className="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Tournament Type</label>
+                        <div className="flex gap-4 mb-4">
+                            <label className={`flex-1 p-4 rounded-xl border cursor-pointer transition-all ${form.type === 'Standard' ? 'bg-blue-600/20 border-blue-500' : 'bg-slate-900/50 border-slate-700 hover:border-slate-500'}`}>
+                                <input
+                                    type="radio"
+                                    name="type"
+                                    value="Standard"
+                                    checked={form.type === 'Standard'}
+                                    onChange={e => setForm({ ...form, type: e.target.value as 'Standard' | 'Custom' })}
+                                    className="hidden"
+                                />
+                                <div className="font-bold text-lg mb-1">Standard</div>
+                                <div className="text-xs text-slate-400">Regular IBJJF Rules</div>
+                            </label>
+                            <label className={`flex-1 p-4 rounded-xl border cursor-pointer transition-all ${form.type === 'Custom' ? 'bg-purple-600/20 border-purple-500' : 'bg-slate-900/50 border-slate-700 hover:border-slate-500'}`}>
+                                <input
+                                    type="radio"
+                                    name="type"
+                                    value="Custom"
+                                    checked={form.type === 'Custom'}
+                                    onChange={e => setForm({ ...form, type: e.target.value as 'Standard' | 'Custom' })}
+                                    className="hidden"
+                                />
+                                <div className="font-bold text-lg mb-1">Random / Custom</div>
+                                <div className="text-xs text-slate-400">Custom Rules & Format</div>
+                            </label>
+                        </div>
+
+                        {form.type === 'Custom' && (
+                            <div className="animate-fadeIn">
+                                <label className="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Custom Rules Description</label>
+                                <textarea
+                                    className="w-full p-4 bg-slate-900/50 rounded-xl border border-slate-700 focus:border-purple-500 outline-none transition-all h-32"
+                                    placeholder="Describe the custom rules for this event..."
+                                    value={form.customRules}
+                                    onChange={e => setForm({ ...form, customRules: e.target.value })}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
 

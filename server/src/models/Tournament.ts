@@ -8,6 +8,8 @@ export interface ITournament extends Document {
     ruleSetId: mongoose.Types.ObjectId;
     adminIds: string[]; // For ownership
     defaultElimination: 'SingleElimination' | 'DoubleElimination' | 'RoundRobin';
+    type: 'Standard' | 'Custom';
+    customRules?: string;
 }
 
 const TournamentSchema: Schema = new Schema({
@@ -17,7 +19,9 @@ const TournamentSchema: Schema = new Schema({
     status: { type: String, enum: ['Planning', 'Registration', 'Active', 'Completed'], default: 'Planning' },
     ruleSetId: { type: Schema.Types.ObjectId, ref: 'RuleSet', required: true },
     adminIds: [{ type: String }],
-    defaultElimination: { type: String, enum: ['SingleElimination', 'DoubleElimination', 'RoundRobin'], default: 'SingleElimination' }
+    defaultElimination: { type: String, enum: ['SingleElimination', 'DoubleElimination', 'RoundRobin'], default: 'SingleElimination' },
+    type: { type: String, enum: ['Standard', 'Custom'], default: 'Standard' },
+    customRules: { type: String }
 }, { timestamps: true });
 
 export default mongoose.model<ITournament>('Tournament', TournamentSchema);
