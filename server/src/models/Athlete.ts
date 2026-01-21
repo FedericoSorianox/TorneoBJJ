@@ -7,6 +7,7 @@ export interface IAthlete extends Document {
     belt: 'White' | 'Blue' | 'Purple' | 'Brown' | 'Black';
     weight: number; // in kg
     gender: 'Male' | 'Female';
+    birthDate?: Date;
     age: number;
     photo?: string;
     globalId?: string; // For persistent tracking across tournaments
@@ -27,6 +28,7 @@ const AthleteSchema: Schema = new Schema({
     belt: { type: String, enum: ['White', 'Blue', 'Purple', 'Brown', 'Black'], required: true },
     weight: { type: Number, required: true },
     gender: { type: String, enum: ['Male', 'Female'], required: true },
+    birthDate: { type: Date },
     age: { type: Number, required: true },
     photo: { type: String },
     globalId: { type: String, unique: true, sparse: true },

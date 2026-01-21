@@ -9,6 +9,7 @@ import athleteRoutes from './routes/athleteRoutes';
 import tournamentRoutes from './routes/tournamentRoutes';
 import matchRoutes from './routes/matchRoutes';
 import categoryRoutes from './routes/categoryRoutes';
+import authRoutes from './routes/authRoutes';
 import { registerMatchHandlers } from './handlers/matchHandler';
 
 dotenv.config();
@@ -56,6 +57,7 @@ app.use('/api/athletes', athleteRoutes);
 app.use('/api/tournaments', tournamentRoutes);
 app.use('/api/matches', matchRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/auth', authRoutes);
 
 // Legacy/Compat routes
 app.get('/api/leaderboard', (req, res) => {

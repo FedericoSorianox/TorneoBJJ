@@ -4,6 +4,16 @@ const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 });
 
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+}, (error) => {
+    return Promise.reject(error);
+});
+
 export const getTournaments = () => api.get('/tournaments').then(res => res.data);
 // export const getTournament = (id: string) => api.get(`/tournaments/${id}`).then(res => res.data); // keeping old one or replacing? user said 'export const getTournamentById'
 // I'll add it alongside or replace if unused. Since the user wants to use getTournamentById in the page, I will add it.

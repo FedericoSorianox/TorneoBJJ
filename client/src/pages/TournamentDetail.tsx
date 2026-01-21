@@ -4,11 +4,13 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { getCategories, createCategory, getAthletes, addAthleteToCategory, generateBracket, getTournamentById, deleteCategory } from '../api';
 import { format, parseISO, addMinutes } from 'date-fns';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const TournamentDetail = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { t } = useLanguage();
+    const { user } = useAuth();
     const [categories, setCategories] = useState<any[]>([]);
     const [athletes, setAthletes] = useState<any[]>([]);
     const [tournament, setTournament] = useState<any>(null);
@@ -92,34 +94,37 @@ const TournamentDetail = () => {
                         </div>
                     )}
                 </div>
-                <div className="flex gap-2">
-                    <Link to={`/tournaments/${id}/edit`} className="bg-slate-700 px-4 py-2 rounded font-bold hover:bg-slate-600 transition-colors">
-                        {t('detail.edit')}
-                    </Link>
-                    <button onClick={() => setShowAddCat(!showAddCat)} className="bg-blue-600 px-4 py-2 rounded font-bold hover:bg-blue-500 transition-colors">
-                        {showAddCat ? t('common.cancel') : t('detail.addCategory')}
-                    </button>
-                </div>
+                {user?.role === 'admin' && (
+                    <div className="flex gap-2">
+                        <Link to={`/tournaments/${id}/edit`} className="bg-slate-700 px-4 py-2 rounded font-bold hover:bg-slate-600 transition-colors">
+                            {t('detail.edit')}
+                        </Link>
+                        <button onClick={() => setShowAddCat(!showAddCat)} className="bg-blue-600 px-4 py-2 rounded font-bold hover:bg-blue-500 transition-colors">
+                            {showAddCat ? t('common.cancel') : t('detail.addCategory')}
+                        </button>
+                    </div>
+                )}
             </div>
-
-            {showAddCat && (
-                <div className="bg-slate-800 p-6 rounded mb-8 border border-slate-700">
-                    <form onSubmit={handleCreateCategory} className="grid grid-cols-2 gap-4">
-                        <input className="bg-slate-900 p-2 rounded border border-slate-600" placeholder={t('category.form.name')} value={newCat.name} onChange={e => setNewCat({ ...newCat, name: e.target.value })} />
-                        <select className="bg-slate-900 p-2 rounded border border-slate-600" value={newCat.gender} onChange={e => setNewCat({ ...newCat, gender: e.target.value })}>
-                            {['Male', 'Female'].map(x => <option key={x}>{x}</option>)}
-                        </select>
-                        <select className="bg-slate-900 p-2 rounded border border-slate-600" value={newCat.belt} onChange={e => setNewCat({ ...newCat, belt: e.target.value })}>
-                            {['White', 'Blue', 'Purple', 'Brown', 'Black'].map(x => <option key={x}>{x}</option>)}
-                        </select>
-                        <select className="bg-slate-900 p-2 rounded border border-slate-600" value={newCat.ageClass} onChange={e => setNewCat({ ...newCat, ageClass: e.target.value })}>
-                            {['Juvenile', 'Adult', 'Master 1', 'Master 2'].map(x => <option key={x}>{x}</option>)}
-                        </select>
-                        <input className="bg-slate-900 p-2 rounded border border-slate-600" placeholder={t('category.form.weightClass')} value={newCat.weightClass} onChange={e => setNewCat({ ...newCat, weightClass: e.target.value })} />
-                        <button className="bg-green-600 p-2 rounded font-bold">{t('category.form.create')}</button>
-                    </form>
-                </div>
-            )}
+            {
+                showAddCat && (
+                    <div className="bg-slate-800 p-6 rounded mb-8 border border-slate-700">
+                        <form onSubmit={handleCreateCategory} className="grid grid-cols-2 gap-4">
+                            <input className="bg-slate-900 p-2 rounded border border-slate-600" placeholder={t('category.form.name')} value={newCat.name} onChange={e => setNewCat({ ...newCat, name: e.target.value })} />
+                            <select className="bg-slate-900 p-2 rounded border border-slate-600" value={newCat.gender} onChange={e => setNewCat({ ...newCat, gender: e.target.value })}>
+                                {['Male', 'Female'].map(x => <option key={x}>{x}</option>)}
+                            </select>
+                            <select className="bg-slate-900 p-2 rounded border border-slate-600" value={newCat.belt} onChange={e => setNewCat({ ...newCat, belt: e.target.value })}>
+                                {['White', 'Blue', 'Purple', 'Brown', 'Black'].map(x => <option key={x}>{x}</option>)}
+                            </select>
+                            <select className="bg-slate-900 p-2 rounded border border-slate-600" value={newCat.ageClass} onChange={e => setNewCat({ ...newCat, ageClass: e.target.value })}>
+                                {['Juvenile', 'Adult', 'Master 1', 'Master 2'].map(x => <option key={x}>{x}</option>)}
+                            </select>
+                            <input className="bg-slate-900 p-2 rounded border border-slate-600" placeholder={t('category.form.weightClass')} value={newCat.weightClass} onChange={e => setNewCat({ ...newCat, weightClass: e.target.value })} />
+                            <button className="bg-green-600 p-2 rounded font-bold">{t('category.form.create')}</button>
+                        </form>
+                    </div>
+                )
+            }
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-auto pb-20">
                 {categories.map(cat => (
@@ -135,43 +140,49 @@ const TournamentDetail = () => {
                                     return <li key={aid} className="text-sm bg-slate-900 px-2 py-1 rounded">{a?.name || aid}</li>
                                 })}
                             </ul>
-                            <div className="flex gap-2">
-                                <select className="flex-1 bg-slate-900 p-1 text-sm rounded border border-slate-600"
-                                    onChange={(e) => handleAddAthlete(cat._id, e.target.value)} defaultValue="">
-                                    <option value="" disabled>{t('category.form.addAthlete')}</option>
-                                    {athletes.filter(a => !(cat.athleteIds || []).includes(a._id)).map(a => (
-                                        <option key={a._id} value={a._id}>{a.name}</option>
-                                    ))}
-                                </select>
-                            </div>
+                            {user?.role === 'admin' && (
+                                <div className="flex gap-2">
+                                    <select className="flex-1 bg-slate-900 p-1 text-sm rounded border border-slate-600"
+                                        onChange={(e) => handleAddAthlete(cat._id, e.target.value)} defaultValue="">
+                                        <option value="" disabled>{t('category.form.addAthlete')}</option>
+                                        {athletes.filter(a => !(cat.athleteIds || []).includes(a._id)).map(a => (
+                                            <option key={a._id} value={a._id}>{a.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex gap-2 mt-4 pt-4 border-t border-slate-700">
-                            <button onClick={() => handleGenerate(cat._id)} className="flex-1 bg-purple-700 hover:bg-purple-600 text-sm py-2 rounded font-bold">
-                                {t('detail.generateBracket')}
-                            </button>
+                            {user?.role === 'admin' && (
+                                <button onClick={() => handleGenerate(cat._id)} className="flex-1 bg-purple-700 hover:bg-purple-600 text-sm py-2 rounded font-bold">
+                                    {t('detail.generateBracket')}
+                                </button>
+                            )}
                             <Link to={`/bracket/${cat._id}`} className="flex-1 bg-slate-700 hover:bg-slate-600 text-center text-sm py-2 rounded font-bold">
                                 {t('detail.viewBracket')}
                             </Link>
-                            <button
-                                onClick={async () => {
-                                    if (!confirm(t('detail.deleteCategoryConfirm'))) return;
-                                    try {
-                                        await deleteCategory(cat._id);
-                                        setCategories(prev => prev.filter(c => c._id !== cat._id));
-                                    } catch (e) {
-                                        alert(t('common.error'));
-                                    }
-                                }}
-                                className="bg-red-700 hover:bg-red-800 text-white px-3 py-2 rounded font-bold"
-                            >
-                                🗑️
-                            </button>
+                            {user?.role === 'admin' && (
+                                <button
+                                    onClick={async () => {
+                                        if (!confirm(t('detail.deleteCategoryConfirm'))) return;
+                                        try {
+                                            await deleteCategory(cat._id);
+                                            setCategories(prev => prev.filter(c => c._id !== cat._id));
+                                        } catch (e) {
+                                            alert(t('common.error'));
+                                        }
+                                    }}
+                                    className="bg-red-700 hover:bg-red-800 text-white px-3 py-2 rounded font-bold"
+                                >
+                                    🗑️
+                                </button>
+                            )}
                         </div>
                     </div>
                 ))}
             </div>
-        </div>
+        </div >
     );
 };
 

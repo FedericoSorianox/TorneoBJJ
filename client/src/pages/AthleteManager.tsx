@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Athlete {
     _id: string;
@@ -15,10 +16,12 @@ interface Athlete {
     age: number;
     photo?: string;
     balance?: number;
+    birthDate?: string;
 }
 
 const AthleteManager = () => {
     const { t } = useLanguage();
+    const { user } = useAuth();
     const [athletes, setAthletes] = useState<Athlete[]>([]);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [form, setForm] = useState({
@@ -27,7 +30,8 @@ const AthleteManager = () => {
         belt: 'White',
         weight: 76,
         gender: 'Male',
-        age: 25
+        age: 25,
+        birthDate: ''
     });
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(true);
@@ -39,6 +43,25 @@ const AthleteManager = () => {
     useEffect(() => {
         load();
     }, []);
+
+    useEffect(() => {
+        if (form.birthDate) {
+            const parts = form.birthDate.split('-');
+            if (parts.length === 3) {
+                const birthYear = parseInt(parts[0]);
+                const birthMonth = parseInt(parts[1]) - 1;
+                const birthDay = parseInt(parts[2]);
+
+                const today = new Date();
+                let age = today.getFullYear() - birthYear;
+                const m = today.getMonth() - birthMonth;
+                if (m < 0 || (m === 0 && today.getDate() < birthDay)) {
+                    age--;
+                }
+                setForm(f => ({ ...f, age: age >= 0 ? age : 0 }));
+            }
+        }
+    }, [form.birthDate]);
 
     const validateForm = () => {
         const errors: string[] = [];
@@ -62,6 +85,9 @@ const AthleteManager = () => {
         e.preventDefault();
 
         const errors = validateForm();
+        // Allow implied age if birthDate is present
+        // But validateForm checks form.age directly which is updated by effect.
+
         if (errors.length > 0) {
             toast.error(errors.join('\n'));
             return;
@@ -74,6 +100,7 @@ const AthleteManager = () => {
         formData.append('weight', String(form.weight));
         formData.append('gender', form.gender);
         formData.append('age', String(form.age));
+        if (form.birthDate) formData.append('birthDate', form.birthDate);
 
         if (selectedFile) {
             formData.append('photo', selectedFile);
@@ -104,7 +131,8 @@ const AthleteManager = () => {
             belt: athlete.belt,
             weight: athlete.weight,
             gender: athlete.gender,
-            age: athlete.age
+            age: athlete.age,
+            birthDate: athlete.birthDate ? new Date(athlete.birthDate).toISOString().split('T')[0] : ''
         });
         setSelectedFile(null); // Clear file input when editing start
     };
@@ -117,7 +145,8 @@ const AthleteManager = () => {
             belt: 'White',
             weight: 76,
             gender: 'Male',
-            age: 25
+            age: 25,
+            birthDate: ''
         });
         setSelectedFile(null);
     };
@@ -165,34 +194,36 @@ const AthleteManager = () => {
                                         <div className="text-yellow-500 text-xs font-bold mt-1">🟡 {a.balance || 0} pts</div>
                                     </div>
                                 </div>
-                                <div className="flex gap-4">
-                                    <button onClick={async () => {
-                                        const amount = prompt("Enter points to redeem:");
-                                        if (amount && !isNaN(Number(amount))) {
-                                            try {
-                                                await redeemPoints(a._id, Number(amount));
-                                                toast.success("Points redeemed!");
-                                                load();
-                                            } catch (e) {
-                                                alert("Failed to redeem (insufficent funds?)");
+                                {user?.role === 'admin' && (
+                                    <div className="flex gap-4">
+                                        <button onClick={async () => {
+                                            const amount = prompt("Enter points to redeem:");
+                                            if (amount && !isNaN(Number(amount))) {
+                                                try {
+                                                    await redeemPoints(a._id, Number(amount));
+                                                    toast.success("Points redeemed!");
+                                                    load();
+                                                } catch (e) {
+                                                    alert("Failed to redeem (insufficent funds?)");
+                                                }
                                             }
-                                        }
-                                    }} className="text-green-400 hover:text-green-300 font-bold" title="Redeem Points">🎁</button>
-                                    <button onClick={async () => {
-                                        const amount = prompt("Admin: Enter points to add:");
-                                        if (amount && !isNaN(Number(amount))) {
-                                            try {
-                                                await addPoints(a._id, Number(amount));
-                                                toast.success("Points awarded!");
-                                                load();
-                                            } catch (e) {
-                                                alert("Failed to add points");
+                                        }} className="text-green-400 hover:text-green-300 font-bold" title="Redeem Points">🎁</button>
+                                        <button onClick={async () => {
+                                            const amount = prompt("Admin: Enter points to add:");
+                                            if (amount && !isNaN(Number(amount))) {
+                                                try {
+                                                    await addPoints(a._id, Number(amount));
+                                                    toast.success("Points awarded!");
+                                                    load();
+                                                } catch (e) {
+                                                    alert("Failed to add points");
+                                                }
                                             }
-                                        }
-                                    }} className="text-yellow-400 hover:text-yellow-300 font-bold" title="Award Points">💰</button>
-                                    <button onClick={() => handleEdit(a)} className="text-blue-400 hover:text-blue-300 font-bold">{t('common.edit')}</button>
-                                    <button onClick={(e) => handleDelete(a._id, e)} className="text-red-500 hover:text-red-400">{t('common.delete')}</button>
-                                </div>
+                                        }} className="text-yellow-400 hover:text-yellow-300 font-bold" title="Award Points">💰</button>
+                                        <button onClick={() => handleEdit(a)} className="text-blue-400 hover:text-blue-300 font-bold">{t('common.edit')}</button>
+                                        <button onClick={(e) => handleDelete(a._id, e)} className="text-red-500 hover:text-red-400">{t('common.delete')}</button>
+                                    </div>
+                                )}
                             </div>
                         ))}
                         {(!Array.isArray(athletes) || athletes.length === 0) && !loading && <div className="text-slate-500">{t('athletes.noAthletes')}</div>}
@@ -200,70 +231,85 @@ const AthleteManager = () => {
                 </div>
 
                 {/* Create/Edit Form */}
-                <div className="w-1/3 bg-slate-800 rounded p-6 h-fit border border-slate-700">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold">{editingId ? t('athletes.edit') : t('athletes.new')}</h2>
-                        {editingId && <button onClick={resetForm} className="text-sm text-slate-400 hover:text-white">{t('common.cancel')}</button>}
+                {user?.role === 'admin' && (
+                    <div className="w-1/3 bg-slate-800 rounded p-6 h-fit border border-slate-700">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold">{editingId ? t('athletes.edit') : t('athletes.new')}</h2>
+                            {editingId && <button onClick={resetForm} className="text-sm text-slate-400 hover:text-white">{t('common.cancel')}</button>}
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="flex justify-center mb-4">
+                                <div className="relative w-24 h-24 bg-slate-700 rounded-full flex items-center justify-center overflow-hidden border-2 border-slate-600 hover:border-blue-500 transition cursor-pointer">
+                                    {selectedFile ? (
+                                        <img src={URL.createObjectURL(selectedFile)} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-2xl text-slate-500">📷</span>
+                                    )}
+                                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={e => setSelectedFile(e.target.files?.[0] || null)} />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-slate-400 text-sm">{t('athletes.form.name')}</label>
+                                <input className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
+                                    value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
+                            </div>
+                            <div>
+                                <label className="block text-slate-400 text-sm">{t('athletes.form.academy')}</label>
+                                <input className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
+                                    value={form.academy} onChange={e => setForm({ ...form, academy: e.target.value })} required />
+                            </div>
+                            <div className="flex gap-2">
+                                <div className="flex-1">
+                                    <label className="block text-slate-400 text-sm">{t('athletes.form.belt')}</label>
+                                    <select className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
+                                        value={form.belt} onChange={e => setForm({ ...form, belt: e.target.value })}>
+                                        {['White', 'Blue', 'Purple', 'Brown', 'Black'].map(b => <option key={b}>{b}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-slate-400 text-sm">{t('athletes.form.gender')}</label>
+                                    <select className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
+                                        value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })}>
+                                        {['Male', 'Female'].map(g => <option key={g}>{g}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <div className="flex-1">
+                                    <label className="block text-slate-400 text-sm">{t('athletes.form.weight')}</label>
+                                    <input type="number" className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
+                                        value={form.weight} onChange={e => setForm({ ...form, weight: Number(e.target.value) })} required />
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <div className="flex-1">
+                                    <label className="block text-slate-400 text-sm">{t('athletes.form.birthDate') || "Fecha de Nacimiento"}</label>
+                                    <input type="date" className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
+                                        value={form.birthDate} onChange={e => setForm({ ...form, birthDate: e.target.value })} />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-slate-400 text-sm">{t('athletes.form.age')}</label>
+                                    <input type="number"
+                                        className={clsx("w-full p-2 rounded border border-slate-700 focus:border-blue-500 outline-none",
+                                            form.birthDate ? "bg-slate-800 text-slate-500" : "bg-slate-900 text-white")}
+                                        value={form.age}
+                                        onChange={e => setForm({ ...form, age: Number(e.target.value) })}
+                                        readOnly={!!form.birthDate}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <button className={clsx("w-full py-3 rounded font-bold mt-4 transition",
+                                editingId ? "bg-yellow-600 hover:bg-yellow-500" : "bg-blue-600 hover:bg-blue-500")}>
+                                {editingId ? t('athletes.form.updateBtn') : t('athletes.form.addBtn')}
+                            </button>
+                        </form>
                     </div>
-
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="flex justify-center mb-4">
-                            <div className="relative w-24 h-24 bg-slate-700 rounded-full flex items-center justify-center overflow-hidden border-2 border-slate-600 hover:border-blue-500 transition cursor-pointer">
-                                {selectedFile ? (
-                                    <img src={URL.createObjectURL(selectedFile)} className="w-full h-full object-cover" />
-                                ) : (
-                                    <span className="text-2xl text-slate-500">📷</span>
-                                )}
-                                <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={e => setSelectedFile(e.target.files?.[0] || null)} />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-slate-400 text-sm">{t('athletes.form.name')}</label>
-                            <input className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
-                                value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
-                        </div>
-                        <div>
-                            <label className="block text-slate-400 text-sm">{t('athletes.form.academy')}</label>
-                            <input className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
-                                value={form.academy} onChange={e => setForm({ ...form, academy: e.target.value })} required />
-                        </div>
-                        <div className="flex gap-2">
-                            <div className="flex-1">
-                                <label className="block text-slate-400 text-sm">{t('athletes.form.belt')}</label>
-                                <select className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
-                                    value={form.belt} onChange={e => setForm({ ...form, belt: e.target.value })}>
-                                    {['White', 'Blue', 'Purple', 'Brown', 'Black'].map(b => <option key={b}>{b}</option>)}
-                                </select>
-                            </div>
-                            <div className="flex-1">
-                                <label className="block text-slate-400 text-sm">{t('athletes.form.gender')}</label>
-                                <select className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
-                                    value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })}>
-                                    {['Male', 'Female'].map(g => <option key={g}>{g}</option>)}
-                                </select>
-                            </div>
-                        </div>
-                        <div className="flex gap-2">
-                            <div className="flex-1">
-                                <label className="block text-slate-400 text-sm">{t('athletes.form.weight')}</label>
-                                <input type="number" className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
-                                    value={form.weight} onChange={e => setForm({ ...form, weight: Number(e.target.value) })} required />
-                            </div>
-                            <div className="flex-1">
-                                <label className="block text-slate-400 text-sm">{t('athletes.form.age')}</label>
-                                <input type="number" className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
-                                    value={form.age} onChange={e => setForm({ ...form, age: Number(e.target.value) })} required />
-                            </div>
-                        </div>
-                        <button className={clsx("w-full py-3 rounded font-bold mt-4 transition",
-                            editingId ? "bg-yellow-600 hover:bg-yellow-500" : "bg-blue-600 hover:bg-blue-500")}>
-                            {editingId ? t('athletes.form.updateBtn') : t('athletes.form.addBtn')}
-                        </button>
-                    </form>
-                </div>
+                )}
             </div>
-        </div>
+        </div >
     );
 };
 

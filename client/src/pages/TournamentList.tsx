@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { format, parseISO, addMinutes } from 'date-fns';
 import { getTournaments, deleteTournament } from '../api';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Tournament {
     _id: string;
@@ -14,6 +15,7 @@ interface Tournament {
 
 const TournamentList = () => {
     const { t } = useLanguage();
+    const { user } = useAuth();
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -28,9 +30,11 @@ const TournamentList = () => {
             <Link to="/" className="text-slate-400 hover:text-white mb-4 inline-block">&larr; {t('common.backHome')}</Link>
             <div className="flex justify-between items-center mb-8">
                 <h1 className="text-4xl font-bold">{t('tournaments.title')}</h1>
-                <Link to="/tournaments/new" className="px-6 py-3 bg-blue-600 rounded font-bold hover:bg-blue-500">
-                    {t('tournaments.new')}
-                </Link>
+                {user?.role === 'admin' && (
+                    <Link to="/tournaments/new" className="px-6 py-3 bg-blue-600 rounded font-bold hover:bg-blue-500">
+                        {t('tournaments.new')}
+                    </Link>
+                )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {tournaments.map(tour => (
@@ -46,30 +50,34 @@ const TournamentList = () => {
                             </div>
                         </Link>
                         <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Link
-                                to={`/tournaments/${tour._id}/edit`}
-                                className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm transition-colors"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                {t('common.edit')}
-                            </Link>
-                            <button
-                                onClick={async (e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    if (!window.confirm(t('tournaments.deleteConfirm'))) return;
-                                    try {
-                                        await deleteTournament(tour._id);
-                                        setTournaments(prev => prev.filter(item => item._id !== tour._id));
-                                    } catch (err) {
-                                        alert('Failed to delete tournament');
-                                        console.error(err);
-                                    }
-                                }}
-                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
-                            >
-                                {t('common.delete')}
-                            </button>
+                            {user?.role === 'admin' && (
+                                <>
+                                    <Link
+                                        to={`/tournaments/${tour._id}/edit`}
+                                        className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm transition-colors"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        {t('common.edit')}
+                                    </Link>
+                                    <button
+                                        onClick={async (e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            if (!window.confirm(t('tournaments.deleteConfirm'))) return;
+                                            try {
+                                                await deleteTournament(tour._id);
+                                                setTournaments(prev => prev.filter(item => item._id !== tour._id));
+                                            } catch (err) {
+                                                alert('Failed to delete tournament');
+                                                console.error(err);
+                                            }
+                                        }}
+                                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                                    >
+                                        {t('common.delete')}
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 ))}
