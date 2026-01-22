@@ -13,13 +13,61 @@ const BracketView = () => {
     const [category, setCategory] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
+    const processBracket = (bracketData: any) => {
+        if (!bracketData || !bracketData.matches) return bracketData;
+
+        const matches = bracketData.matches;
+        const roundsMap = new Map<number, any[]>();
+        const consolationMap = new Map<number, any[]>();
+
+        matches.forEach((m: any) => {
+            const matchFormatted = {
+                id: m._id,
+                winnerId: m.winnerId,
+                nextMatchId: m.nextMatchId,
+                p1: {
+                    id: m.athlete1Id?._id,
+                    name: m.athlete1Id?.name
+                },
+                p2: {
+                    id: m.athlete2Id?._id,
+                    name: m.athlete2Id?.name
+                },
+                round: m.round,
+                matchNumber: m.matchNumber || 0,
+                bracketType: m.bracketType
+            };
+
+            const targetMap = (m.bracketType === 'Loser') ? consolationMap : roundsMap;
+            const r = m.round || 1;
+
+            if (!targetMap.has(r)) targetMap.set(r, []);
+            targetMap.get(r).push(matchFormatted);
+        });
+
+        // Convert Maps to sorted Arrays
+        const rounds = Array.from(roundsMap.keys())
+            .sort((a, b) => a - b)
+            .map(key => roundsMap.get(key)!.sort((a, b) => a.matchNumber - b.matchNumber));
+
+        const consolationRounds = Array.from(consolationMap.keys())
+            .sort((a, b) => a - b)
+            .map(key => consolationMap.get(key)!.sort((a, b) => a.matchNumber - b.matchNumber));
+
+        return {
+            ...bracketData,
+            rounds,
+            consolationRounds
+        };
+    };
+
     useEffect(() => {
         if (categoryId) {
             Promise.all([
                 getBracket(categoryId),
                 getCategoryById(categoryId)
             ]).then(([b, c]) => {
-                setBracket(b);
+                setBracket(processBracket(b));
                 setCategory(c);
                 setLoading(false);
             }).catch(e => {
