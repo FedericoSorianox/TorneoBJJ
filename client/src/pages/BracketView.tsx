@@ -42,7 +42,7 @@ const BracketView = () => {
             const r = m.round || 1;
 
             if (!targetMap.has(r)) targetMap.set(r, []);
-            targetMap.get(r).push(matchFormatted);
+            targetMap.get(r)!.push(matchFormatted);
         });
 
         // Convert Maps to sorted Arrays
@@ -94,11 +94,13 @@ const BracketView = () => {
         const winnerId = match.winnerId;
 
         return (
-            <div key={match.id} className={clsx(
-                "relative flex flex-col w-64 bg-slate-800 rounded-lg border-2 shadow-xl transition-all hover:scale-[1.02] mb-4 shrink-0",
-                winnerId ? "border-green-600/50" : "border-slate-700",
-                isFinal && "border-yellow-500/50 ring-1 ring-yellow-500/20"
-            )}>
+            <div key={match.id}
+                onClick={() => navigate(`/match/${match.id}`)}
+                className={clsx(
+                    "relative flex flex-col w-64 bg-slate-800 rounded-lg border-2 shadow-xl transition-all hover:scale-[1.02] mb-4 shrink-0 cursor-pointer",
+                    winnerId ? "border-green-600/50" : "border-slate-700",
+                    isFinal && "border-yellow-500/50 ring-1 ring-yellow-500/20"
+                )}>
                 {/* Header */}
                 <div className="flex justify-between items-center px-3 py-1 bg-black/20 text-[10px] text-slate-400 font-mono tracking-wider border-b border-slate-700/50">
                     <span>M#{match.id.slice(-4)}</span>

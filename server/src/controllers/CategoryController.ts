@@ -80,7 +80,10 @@ export const generateBracketEndpoint = async (req: Request, res: Response) => {
         const tournament = await mongoose.model('Tournament').findById(category.tournamentId);
         const { eliminationType = tournament?.defaultElimination || 'SingleElimination' } = req.body || {};
 
-        const athleteIds = athletes.map((id: any) => id.toString());
+        // Shuffle athletes for random bracket placement
+        const athleteIds = athletes.map((id: any) => id.toString())
+            .sort(() => Math.random() - 0.5);
+
         let structure: any[];
 
         if (eliminationType === 'DoubleElimination') {
