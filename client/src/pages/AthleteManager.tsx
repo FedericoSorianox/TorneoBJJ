@@ -33,7 +33,9 @@ const AthleteManager = () => {
         weight: 76,
         gender: 'Male',
         age: 25,
-        birthDate: ''
+        birthDate: '',
+        rankingPoints: 0,
+        balance: 0
     });
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(true);
@@ -103,6 +105,8 @@ const AthleteManager = () => {
         formData.append('gender', form.gender);
         formData.append('age', String(form.age));
         if (form.birthDate) formData.append('birthDate', form.birthDate);
+        formData.append('rankingPoints', String(form.rankingPoints));
+        formData.append('balance', String(form.balance));
 
         if (selectedFile) {
             formData.append('photo', selectedFile);
@@ -127,6 +131,9 @@ const AthleteManager = () => {
 
     const handleEdit = (athlete: Athlete) => {
         setEditingId(athlete._id);
+        const rankingPoints = (athlete as any).rankingPoints || 0;
+        const balance = (athlete as any).balance || 0;
+
         setForm({
             name: athlete.name,
             academy: athlete.academy,
@@ -134,7 +141,9 @@ const AthleteManager = () => {
             weight: athlete.weight,
             gender: athlete.gender,
             age: athlete.age,
-            birthDate: athlete.birthDate ? new Date(athlete.birthDate).toISOString().split('T')[0] : ''
+            birthDate: athlete.birthDate ? new Date(athlete.birthDate).toISOString().split('T')[0] : '',
+            rankingPoints,
+            balance
         });
         setSelectedFile(null); // Clear file input when editing start
     };
@@ -148,7 +157,9 @@ const AthleteManager = () => {
             weight: 76,
             gender: 'Male',
             age: 25,
-            birthDate: ''
+            birthDate: '',
+            rankingPoints: 0,
+            balance: 0
         });
         setSelectedFile(null);
     };
@@ -326,6 +337,18 @@ const AthleteManager = () => {
                                         readOnly={!!form.birthDate}
                                         required
                                     />
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <div className="flex-1">
+                                    <label className="block text-slate-400 text-sm">{t('athletes.form.rankingPoints') || "Ranking Points"}</label>
+                                    <input type="number" className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
+                                        value={form.rankingPoints} onChange={e => setForm({ ...form, rankingPoints: Number(e.target.value) })} />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-slate-400 text-sm">{t('athletes.form.balance') || "Balance"}</label>
+                                    <input type="number" className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
+                                        value={form.balance} onChange={e => setForm({ ...form, balance: Number(e.target.value) })} />
                                 </div>
                             </div>
                             <button className={clsx("w-full py-3 rounded font-bold mt-4 transition",
