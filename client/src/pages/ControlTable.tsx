@@ -123,7 +123,7 @@ const ControlTable = () => {
                 <div className="flex flex-col items-center justify-center w-full flex-1 min-h-0">
                     {/* Points */}
                     <div className="relative group">
-                        <div className="text-[14rem] lg:text-[18rem] font-black leading-none text-yellow-500 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition duration-500 select-none">
+                        <div className="text-[25vh] font-black leading-none text-yellow-500 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition duration-500 select-none">
                             {points}
                         </div>
                     </div>
@@ -131,40 +131,40 @@ const ControlTable = () => {
                     {/* ADV & PEN */}
                     <div className="grid grid-cols-2 gap-8 lg:gap-16 w-full px-6">
                         {/* ADV */}
-                        <div className="flex flex-col items-center gap-2">
-                            <span className="text-lg font-bold text-slate-600 uppercase tracking-widest">ADV</span>
-                            <div className="flex items-center gap-4">
-                                <button onClick={() => sendEvent('sub_advantage', athleteSide)} className="size-12 rounded-xl bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-2xl font-bold text-slate-400 hover:bg-slate-700 hover:text-white transition shadow-lg active:scale-95">–</button>
-                                <span className="text-[5rem] lg:text-[6rem] font-black text-emerald-500 leading-none select-none min-w-[1.2em] text-center">{adv}</span>
-                                <button onClick={() => sendEvent('advantage', athleteSide)} className="size-12 rounded-xl bg-emerald-950 border-2 border-emerald-800 flex items-center justify-center text-2xl font-bold text-emerald-400 hover:bg-emerald-800 hover:text-emerald-200 transition shadow-lg active:scale-95">+</button>
+                        <div className="flex flex-col items-center gap-1">
+                            <span className="text-sm lg:text-base font-bold text-slate-600 uppercase tracking-widest">ADV</span>
+                            <div className="flex items-center gap-2 lg:gap-4">
+                                <button onClick={() => sendEvent('sub_advantage', athleteSide)} className="size-10 lg:size-12 rounded-xl bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-2xl font-bold text-slate-400 hover:bg-slate-700 hover:text-white transition shadow-lg active:scale-95">–</button>
+                                <span className="text-[8vh] font-black text-emerald-500 leading-none select-none min-w-[1.2em] text-center">{adv}</span>
+                                <button onClick={() => sendEvent('advantage', athleteSide)} className="size-10 lg:size-12 rounded-xl bg-emerald-950 border-2 border-emerald-800 flex items-center justify-center text-2xl font-bold text-emerald-400 hover:bg-emerald-800 hover:text-emerald-200 transition shadow-lg active:scale-95">+</button>
                             </div>
                         </div>
 
                         {/* PEN */}
-                        <div className="flex flex-col items-center gap-2">
-                            <span className="text-lg font-bold text-slate-600 uppercase tracking-widest">PEN</span>
-                            <div className="flex items-center gap-4">
-                                <button onClick={() => sendEvent('sub_penalty', athleteSide)} className="size-12 rounded-xl bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-2xl font-bold text-slate-400 hover:bg-slate-700 hover:text-white transition shadow-lg active:scale-95">–</button>
-                                <span className="text-[5rem] lg:text-[6rem] font-black text-rose-600 leading-none select-none min-w-[1.2em] text-center">{pen}</span>
-                                <button onClick={() => sendEvent('penalty', athleteSide)} className="size-12 rounded-xl bg-rose-950 border-2 border-rose-800 flex items-center justify-center text-2xl font-bold text-rose-400 hover:bg-rose-800 hover:text-rose-200 transition shadow-lg active:scale-95">+</button>
+                        <div className="flex flex-col items-center gap-1">
+                            <span className="text-sm lg:text-base font-bold text-slate-600 uppercase tracking-widest">PEN</span>
+                            <div className="flex items-center gap-2 lg:gap-4">
+                                <button onClick={() => sendEvent('sub_penalty', athleteSide)} className="size-10 lg:size-12 rounded-xl bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-2xl font-bold text-slate-400 hover:bg-slate-700 hover:text-white transition shadow-lg active:scale-95">–</button>
+                                <span className="text-[8vh] font-black text-rose-600 leading-none select-none min-w-[1.2em] text-center">{pen}</span>
+                                <button onClick={() => sendEvent('penalty', athleteSide)} className="size-10 lg:size-12 rounded-xl bg-rose-950 border-2 border-rose-800 flex items-center justify-center text-2xl font-bold text-rose-400 hover:bg-rose-800 hover:text-rose-200 transition shadow-lg active:scale-95">+</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Score Controls */}
-                <div className="w-full flex flex-col gap-3 mt-4 bg-black/30 p-4 rounded-2xl border border-white/5">
+                <div className="w-full flex flex-col gap-2 mt-2 bg-black/30 p-3 rounded-2xl border border-white/5">
                     {/* Addition Buttons */}
-                    <div className="grid grid-cols-3 gap-4 h-24 lg:h-28">
-                        <button onClick={() => sendEvent('points', athleteSide, 2)} className="h-full rounded-xl bg-blue-600 hover:bg-blue-500 flex items-center justify-center text-4xl font-black text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] transition active:scale-95">+2</button>
-                        <button onClick={() => sendEvent('points', athleteSide, 3)} className="h-full rounded-xl bg-purple-600 hover:bg-purple-500 flex items-center justify-center text-4xl font-black text-white shadow-[0_0_20px_rgba(147,51,234,0.4)] transition active:scale-95">+3</button>
-                        <button onClick={() => sendEvent('points', athleteSide, 4)} className="h-full rounded-xl bg-orange-600 hover:bg-orange-500 flex items-center justify-center text-4xl font-black text-white shadow-[0_0_20_rgba(234,88,12,0.4)] transition active:scale-95">+4</button>
+                    <div className="grid grid-cols-3 gap-3 h-[10vh]">
+                        <button onClick={() => sendEvent('points', athleteSide, 2)} className="h-full rounded-xl bg-blue-600 hover:bg-blue-500 flex items-center justify-center text-3xl font-black text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] transition active:scale-95">+2</button>
+                        <button onClick={() => sendEvent('points', athleteSide, 3)} className="h-full rounded-xl bg-purple-600 hover:bg-purple-500 flex items-center justify-center text-3xl font-black text-white shadow-[0_0_20px_rgba(147,51,234,0.4)] transition active:scale-95">+3</button>
+                        <button onClick={() => sendEvent('points', athleteSide, 4)} className="h-full rounded-xl bg-orange-600 hover:bg-orange-500 flex items-center justify-center text-3xl font-black text-white shadow-[0_0_20_rgba(234,88,12,0.4)] transition active:scale-95">+4</button>
                     </div>
                     {/* Subtraction Buttons */}
-                    <div className="grid grid-cols-3 gap-4 h-14 lg:h-16">
-                        <button onClick={() => sendEvent('sub_points', athleteSide, 2)} className="h-full rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-2xl font-black text-slate-400 border border-slate-700 transition active:scale-95">-2</button>
-                        <button onClick={() => sendEvent('sub_points', athleteSide, 3)} className="h-full rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-2xl font-black text-slate-400 border border-slate-700 transition active:scale-95">-3</button>
-                        <button onClick={() => sendEvent('sub_points', athleteSide, 4)} className="h-full rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-2xl font-black text-slate-400 border border-slate-700 transition active:scale-95">-4</button>
+                    <div className="grid grid-cols-3 gap-3 h-[6vh]">
+                        <button onClick={() => sendEvent('sub_points', athleteSide, 2)} className="h-full rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-xl font-black text-slate-400 border border-slate-700 transition active:scale-95">-2</button>
+                        <button onClick={() => sendEvent('sub_points', athleteSide, 3)} className="h-full rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-xl font-black text-slate-400 border border-slate-700 transition active:scale-95">-3</button>
+                        <button onClick={() => sendEvent('sub_points', athleteSide, 4)} className="h-full rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-xl font-black text-slate-400 border border-slate-700 transition active:scale-95">-4</button>
                     </div>
                 </div>
             </div>
