@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Category from '../models/Category';
 import Bracket from '../models/Bracket';
+import Athlete from '../models/Athlete';
 
 export const createCategory = async (req: Request, res: Response) => {
     try {
@@ -166,6 +167,75 @@ export const getBracketEndpoint = async (req: Request, res: Response) => {
         res.status(500).json({ error: (error as Error).message });
     }
 }
+
+export const finalizeCategory = async (req: Request, res: Response) => {
+    try {
+        const categoryId = req.params.id;
+        const bracket = await Bracket.findOne({ categoryId }).populate('matches');
+        if (!bracket) return res.status(404).json({ error: 'Bracket not found' });
+
+        // Check if already finalized to avoid double points
+        if (bracket.winnerId) {
+            return res.status(400).json({ error: 'Category is already finalized' });
+        }
+
+        const matches = await Match.find({ bracketId: bracket._id });
+        // Simplified final check: No nextMatchId and either round is highest or bracketType is 'Final'
+        const finalMatch = matches.find(m => m.bracketType === 'Final' || !m.nextMatchId);
+
+        if (!finalMatch || finalMatch.status !== 'Finished' || !finalMatch.winnerId) {
+            return res.status(400).json({ error: 'Final match is not finished or not found' });
+        }
+
+        const firstId = finalMatch.winnerId;
+        const secondId = finalMatch.athlete1Id?.toString() === firstId.toString() ? finalMatch.athlete2Id : finalMatch.athlete1Id;
+
+        // Podium points (High values centered around the 100-per-win base)
+        const points = { first: 1000, second: 500, third: 200 };
+
+        const assignments: any[] = [];
+
+        // Award 1st
+        await Athlete.findByIdAndUpdate(firstId, {
+            $inc: { rankingPoints: points.first, balance: points.first }
+        });
+        assignments.push({ athleteId: firstId, place: 1, points: points.first });
+
+        // Award 2nd
+        if (secondId) {
+            await Athlete.findByIdAndUpdate(secondId, {
+                $inc: { rankingPoints: points.second, balance: points.second }
+            });
+            assignments.push({ athleteId: secondId, place: 2, points: points.second });
+        }
+
+        // Award 3rd places (Losers of Semi Finals)
+        if (finalMatch.round && finalMatch.round > 1) {
+            const semiFinals = matches.filter(m => m.round === finalMatch.round! - 1 && m.bracketType !== 'Loser');
+            for (const sf of semiFinals) {
+                const loserId = sf.athlete1Id?.toString() === sf.winnerId?.toString() ? sf.athlete2Id : sf.athlete1Id;
+                if (loserId) {
+                    await Athlete.findByIdAndUpdate(loserId, {
+                        $inc: { rankingPoints: points.third, balance: points.third }
+                    });
+                    assignments.push({ athleteId: loserId, place: 3, points: points.third });
+                }
+            }
+        }
+
+        bracket.winnerId = firstId as any;
+        await bracket.save();
+
+        res.json({
+            message: 'Category finalized successfully',
+            assignments
+        });
+
+    } catch (error) {
+        console.error("Finalize error:", error);
+        res.status(500).json({ error: (error as Error).message });
+    }
+};
 
 export const deleteCategory = async (req: Request, res: Response) => {
     try {

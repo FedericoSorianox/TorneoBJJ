@@ -11,8 +11,9 @@ export const seedAdmin = async () => {
         }
 
         console.log('⚠️  Admin user not found. Creating initial admin...');
+        const initialPassword = process.env.ADMIN_PASSWORD || 'admin123';
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash('admin123', salt);
+        const hashedPassword = await bcrypt.hash(initialPassword, salt);
 
         await User.create({
             username: 'admin',
@@ -20,7 +21,7 @@ export const seedAdmin = async () => {
             role: 'admin'
         });
 
-        console.log('✅  Admin user created: admin / admin123');
+        console.log(`✅  Admin user created: admin / ${process.env.ADMIN_PASSWORD ? '********' : 'admin123'}`);
     } catch (error) {
         console.error('❌  Error seeding admin:', error);
     }

@@ -24,6 +24,185 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 const SOCKET_URL = API_URL.replace(/\/api$/, '');
 const socket = io(SOCKET_URL);
 
+const ScoreCard = ({ name, academy, score, isP1, sendEvent }: { name: string, academy: string, score: MatchScore, isP1: boolean, sendEvent: (type: string, athleteSide: string, points?: number) => void }) => {
+    const athleteSide = isP1 ? 'p1' : 'p2';
+    const points = isP1 ? score.p1 : score.p2;
+    const adv = isP1 ? score.p1Adv : score.p2Adv;
+    const pen = isP1 ? score.p1Pen : score.p2Pen;
+
+    return (
+        <div className={clsx("flex-1 flex flex-col items-center justify-between p-4 overflow-hidden", isP1 ? "bg-slate-950" : "bg-slate-900")}>
+            {/* Header */}
+            <div className="w-full text-center space-y-0">
+                <h2 className="text-4xl lg:text-5xl font-black uppercase tracking-tight text-white leading-tight whitespace-nowrap overflow-hidden text-ellipsis px-2">{name}</h2>
+                <p className="text-lg lg:text-xl font-semibold text-slate-500 uppercase tracking-[0.2em]">{academy}</p>
+            </div>
+
+            {/* Score Section */}
+            <div className="flex flex-col items-center justify-center w-full flex-1 min-h-0">
+                {/* Points */}
+                <div className="relative group">
+                    <div className="text-[25vh] font-black leading-none text-yellow-500 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition duration-500 select-none">
+                        {points}
+                    </div>
+                </div>
+
+                {/* ADV & PEN */}
+                <div className="grid grid-cols-2 gap-8 lg:gap-16 w-full px-6">
+                    {/* ADV */}
+                    <div className="flex flex-col items-center gap-1">
+                        <span className="text-sm lg:text-base font-bold text-slate-600 uppercase tracking-widest">ADV</span>
+                        <div className="flex items-center gap-2 lg:gap-4">
+                            <button onClick={() => sendEvent('sub_advantage', athleteSide)} className="size-10 lg:size-12 rounded-xl bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-2xl font-bold text-slate-400 hover:bg-slate-700 hover:text-white transition shadow-lg active:scale-95">–</button>
+                            <span className="text-[8vh] font-black text-emerald-500 leading-none select-none min-w-[1.2em] text-center">{adv}</span>
+                            <button onClick={() => sendEvent('advantage', athleteSide)} className="size-10 lg:size-12 rounded-xl bg-emerald-950 border-2 border-emerald-800 flex items-center justify-center text-2xl font-bold text-emerald-400 hover:bg-emerald-800 hover:text-emerald-200 transition shadow-lg active:scale-95">+</button>
+                        </div>
+                    </div>
+
+                    {/* PEN */}
+                    <div className="flex flex-col items-center gap-1">
+                        <span className="text-sm lg:text-base font-bold text-slate-600 uppercase tracking-widest">PEN</span>
+                        <div className="flex items-center gap-2 lg:gap-4">
+                            <button onClick={() => sendEvent('sub_penalty', athleteSide)} className="size-10 lg:size-12 rounded-xl bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-2xl font-bold text-slate-400 hover:bg-slate-700 hover:text-white transition shadow-lg active:scale-95">–</button>
+                            <span className="text-[8vh] font-black text-rose-600 leading-none select-none min-w-[1.2em] text-center">{pen}</span>
+                            <button onClick={() => sendEvent('penalty', athleteSide)} className="size-10 lg:size-12 rounded-xl bg-rose-950 border-2 border-rose-800 flex items-center justify-center text-2xl font-bold text-rose-400 hover:bg-rose-800 hover:text-rose-200 transition shadow-lg active:scale-95">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Score Controls */}
+            <div className="w-full flex flex-col gap-2 mt-2 bg-black/30 p-3 rounded-2xl border border-white/5">
+                {/* Addition Buttons */}
+                <div className="grid grid-cols-3 gap-3 h-[10vh]">
+                    <button onClick={() => sendEvent('points', athleteSide, 2)} className="h-full rounded-xl bg-blue-600 hover:bg-blue-500 flex items-center justify-center text-3xl font-black text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] transition active:scale-95">+2</button>
+                    <button onClick={() => sendEvent('points', athleteSide, 3)} className="h-full rounded-xl bg-purple-600 hover:bg-purple-500 flex items-center justify-center text-3xl font-black text-white shadow-[0_0_20px_rgba(147,51,234,0.4)] transition active:scale-95">+3</button>
+                    <button onClick={() => sendEvent('points', athleteSide, 4)} className="h-full rounded-xl bg-orange-600 hover:bg-orange-500 flex items-center justify-center text-3xl font-black text-white shadow-[0_0_20_rgba(234,88,12,0.4)] transition active:scale-95">+4</button>
+                </div>
+                {/* Subtraction Buttons */}
+                <div className="grid grid-cols-3 gap-3 h-[6vh]">
+                    <button onClick={() => sendEvent('sub_points', athleteSide, 2)} className="h-full rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-xl font-black text-slate-400 border border-slate-700 transition active:scale-95">-2</button>
+                    <button onClick={() => sendEvent('sub_points', athleteSide, 3)} className="h-full rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-xl font-black text-slate-400 border border-slate-700 transition active:scale-95">-3</button>
+                    <button onClick={() => sendEvent('sub_points', athleteSide, 4)} className="h-full rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-xl font-black text-slate-400 border border-slate-700 transition active:scale-95">-4</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const EndMatchModal = ({ match, t, onClose, onConfirm }: { match: Match, t: any, onClose: () => void, onConfirm: (winnerId: string | null, method: string) => void }) => {
+    const [selectedWinner, setSelectedWinner] = useState<string | null>(null);
+    const [method, setMethod] = useState('Points');
+
+    const p1 = match.athlete1Id || { name: 'P1', academy: 'Academy A' };
+    const p2 = match.athlete2Id || { name: 'P2', academy: 'Academy B' };
+
+    const methods = [
+        { value: 'Points', label: t('modal.points') },
+        { value: 'Submission', label: t('modal.submission') },
+        { value: 'Referee Decision', label: t('modal.decision') },
+        { value: 'Disqualification', label: t('modal.dq') },
+        { value: 'Walkover', label: t('modal.walkover') },
+        { value: 'Advantage', label: t('modal.advantage') }
+    ];
+
+    const suggestWinner = () => {
+        if (match.score.p1 > match.score.p2) return 'p1';
+        if (match.score.p2 > match.score.p1) return 'p2';
+        if (match.score.p1Adv > match.score.p2Adv) return 'p1';
+        if (match.score.p2Adv > match.score.p1Adv) return 'p2';
+        if (match.score.p1Pen < match.score.p2Pen) return 'p1';
+        if (match.score.p2Pen < match.score.p1Pen) return 'p2';
+        return null;
+    };
+
+    useEffect(() => {
+        const suggestion = suggestWinner();
+        if (suggestion === 'p1') setSelectedWinner((match?.athlete1Id as any)?._id);
+        if (suggestion === 'p2') setSelectedWinner((match?.athlete2Id as any)?._id);
+    }, []);
+
+    return (
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-2xl p-8 flex flex-col gap-8 shadow-2xl">
+                <h2 className="text-3xl font-black text-white uppercase tracking-tighter text-center">{t('modal.finalize')}</h2>
+
+                <div className="flex flex-col gap-4">
+                    <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">{t('modal.selectWinner')}</label>
+                    <div className="grid grid-cols-2 gap-4">
+                        <button
+                            onClick={() => setSelectedWinner((match?.athlete1Id as any)?._id)}
+                            className={clsx(
+                                "p-6 rounded-2xl border-2 transition-all flex flex-col items-center gap-2",
+                                selectedWinner === (match?.athlete1Id as any)?._id
+                                    ? "bg-blue-600 border-blue-400 shadow-[0_0_30px_rgba(37,99,235,0.3)]"
+                                    : "bg-slate-800 border-slate-700 hover:bg-slate-700"
+                            )}
+                        >
+                            <span className="text-2xl font-black text-white uppercase text-center">{p1.name}</span>
+                            <span className="text-sm font-bold text-blue-200 opacity-70 uppercase tracking-widest">{p1.academy}</span>
+                        </button>
+
+                        <button
+                            onClick={() => setSelectedWinner((match?.athlete2Id as any)?._id)}
+                            className={clsx(
+                                "p-6 rounded-2xl border-2 transition-all flex flex-col items-center gap-2",
+                                selectedWinner === (match?.athlete2Id as any)?._id
+                                    ? "bg-blue-600 border-blue-400 shadow-[0_0_30px_rgba(37,99,235,0.3)]"
+                                    : "bg-slate-800 border-slate-700 hover:bg-slate-700"
+                            )}
+                        >
+                            <span className="text-2xl font-black text-white uppercase text-center">{p2.name}</span>
+                            <span className="text-sm font-bold text-blue-200 opacity-70 uppercase tracking-widest">{p2.academy}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                    <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">{t('modal.method')}</label>
+                    <div className="grid grid-cols-3 gap-3">
+                        {methods.map(m => (
+                            <button
+                                key={m.value}
+                                onClick={() => setMethod(m.value)}
+                                className={clsx(
+                                    "px-4 py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all",
+                                    method === m.value
+                                        ? "bg-emerald-600 text-white shadow-lg scale-105"
+                                        : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
+                                )}
+                            >
+                                {m.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="flex gap-4 mt-4">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold uppercase tracking-widest rounded-xl transition"
+                    >
+                        {t('modal.cancel')}
+                    </button>
+                    <button
+                        onClick={() => onConfirm(selectedWinner, method)}
+                        disabled={!selectedWinner}
+                        className={clsx(
+                            "flex-1 py-4 font-black uppercase tracking-widest rounded-xl transition shadow-lg",
+                            !selectedWinner
+                                ? "bg-slate-800 text-slate-600 cursor-not-allowed"
+                                : "bg-emerald-500 hover:bg-emerald-400 text-black shadow-emerald-500/20"
+                        )}
+                    >
+                        {t('modal.confirm')}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const ControlTable = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -107,185 +286,16 @@ const ControlTable = () => {
     const p1 = match.athlete1Id || { name: 'P1', academy: 'Academy A' };
     const p2 = match.athlete2Id || { name: 'P2', academy: 'Academy B' };
 
-    const ScoreCard = ({ name, academy, score, isP1 }: { name: string, academy: string, score: MatchScore, isP1: boolean }) => {
-        const athleteSide = isP1 ? 'p1' : 'p2';
-        const points = isP1 ? score.p1 : score.p2;
-        const adv = isP1 ? score.p1Adv : score.p2Adv;
-        const pen = isP1 ? score.p1Pen : score.p2Pen;
-
-        return (
-            <div className={clsx("flex-1 flex flex-col items-center justify-between p-4 overflow-hidden", isP1 ? "bg-slate-950" : "bg-slate-900")}>
-                {/* Header */}
-                <div className="w-full text-center space-y-0">
-                    <h2 className="text-4xl lg:text-5xl font-black uppercase tracking-tight text-white leading-tight whitespace-nowrap overflow-hidden text-ellipsis px-2">{name}</h2>
-                    <p className="text-lg lg:text-xl font-semibold text-slate-500 uppercase tracking-[0.2em]">{academy}</p>
-                </div>
-
-                {/* Score Section */}
-                <div className="flex flex-col items-center justify-center w-full flex-1 min-h-0">
-                    {/* Points */}
-                    <div className="relative group">
-                        <div className="text-[25vh] font-black leading-none text-yellow-500 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition duration-500 select-none">
-                            {points}
-                        </div>
-                    </div>
-
-                    {/* ADV & PEN */}
-                    <div className="grid grid-cols-2 gap-8 lg:gap-16 w-full px-6">
-                        {/* ADV */}
-                        <div className="flex flex-col items-center gap-1">
-                            <span className="text-sm lg:text-base font-bold text-slate-600 uppercase tracking-widest">ADV</span>
-                            <div className="flex items-center gap-2 lg:gap-4">
-                                <button onClick={() => sendEvent('sub_advantage', athleteSide)} className="size-10 lg:size-12 rounded-xl bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-2xl font-bold text-slate-400 hover:bg-slate-700 hover:text-white transition shadow-lg active:scale-95">–</button>
-                                <span className="text-[8vh] font-black text-emerald-500 leading-none select-none min-w-[1.2em] text-center">{adv}</span>
-                                <button onClick={() => sendEvent('advantage', athleteSide)} className="size-10 lg:size-12 rounded-xl bg-emerald-950 border-2 border-emerald-800 flex items-center justify-center text-2xl font-bold text-emerald-400 hover:bg-emerald-800 hover:text-emerald-200 transition shadow-lg active:scale-95">+</button>
-                            </div>
-                        </div>
-
-                        {/* PEN */}
-                        <div className="flex flex-col items-center gap-1">
-                            <span className="text-sm lg:text-base font-bold text-slate-600 uppercase tracking-widest">PEN</span>
-                            <div className="flex items-center gap-2 lg:gap-4">
-                                <button onClick={() => sendEvent('sub_penalty', athleteSide)} className="size-10 lg:size-12 rounded-xl bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-2xl font-bold text-slate-400 hover:bg-slate-700 hover:text-white transition shadow-lg active:scale-95">–</button>
-                                <span className="text-[8vh] font-black text-rose-600 leading-none select-none min-w-[1.2em] text-center">{pen}</span>
-                                <button onClick={() => sendEvent('penalty', athleteSide)} className="size-10 lg:size-12 rounded-xl bg-rose-950 border-2 border-rose-800 flex items-center justify-center text-2xl font-bold text-rose-400 hover:bg-rose-800 hover:text-rose-200 transition shadow-lg active:scale-95">+</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Score Controls */}
-                <div className="w-full flex flex-col gap-2 mt-2 bg-black/30 p-3 rounded-2xl border border-white/5">
-                    {/* Addition Buttons */}
-                    <div className="grid grid-cols-3 gap-3 h-[10vh]">
-                        <button onClick={() => sendEvent('points', athleteSide, 2)} className="h-full rounded-xl bg-blue-600 hover:bg-blue-500 flex items-center justify-center text-3xl font-black text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] transition active:scale-95">+2</button>
-                        <button onClick={() => sendEvent('points', athleteSide, 3)} className="h-full rounded-xl bg-purple-600 hover:bg-purple-500 flex items-center justify-center text-3xl font-black text-white shadow-[0_0_20px_rgba(147,51,234,0.4)] transition active:scale-95">+3</button>
-                        <button onClick={() => sendEvent('points', athleteSide, 4)} className="h-full rounded-xl bg-orange-600 hover:bg-orange-500 flex items-center justify-center text-3xl font-black text-white shadow-[0_0_20_rgba(234,88,12,0.4)] transition active:scale-95">+4</button>
-                    </div>
-                    {/* Subtraction Buttons */}
-                    <div className="grid grid-cols-3 gap-3 h-[6vh]">
-                        <button onClick={() => sendEvent('sub_points', athleteSide, 2)} className="h-full rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-xl font-black text-slate-400 border border-slate-700 transition active:scale-95">-2</button>
-                        <button onClick={() => sendEvent('sub_points', athleteSide, 3)} className="h-full rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-xl font-black text-slate-400 border border-slate-700 transition active:scale-95">-3</button>
-                        <button onClick={() => sendEvent('sub_points', athleteSide, 4)} className="h-full rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-xl font-black text-slate-400 border border-slate-700 transition active:scale-95">-4</button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    const EndMatchModal = () => {
-        const [selectedWinner, setSelectedWinner] = useState<string | null>(null);
-        const [method, setMethod] = useState('Points');
-
-        const methods = [
-            { value: 'Points', label: t('modal.points') },
-            { value: 'Submission', label: t('modal.submission') },
-            { value: 'Referee Decision', label: t('modal.decision') },
-            { value: 'Disqualification', label: t('modal.dq') },
-            { value: 'Walkover', label: t('modal.walkover') },
-            { value: 'Advantage', label: t('modal.advantage') }
-        ];
-
-        const suggestWinner = () => {
-            if (match!.score.p1 > match!.score.p2) return 'p1';
-            if (match!.score.p2 > match!.score.p1) return 'p2';
-            if (match!.score.p1Adv > match!.score.p2Adv) return 'p1';
-            if (match!.score.p2Adv > match!.score.p1Adv) return 'p2';
-            if (match!.score.p1Pen < match!.score.p2Pen) return 'p1';
-            if (match!.score.p2Pen < match!.score.p1Pen) return 'p2';
-            return null;
-        };
-
-        useEffect(() => {
-            const suggestion = suggestWinner();
-            if (suggestion === 'p1') setSelectedWinner((match?.athlete1Id as any)?._id);
-            if (suggestion === 'p2') setSelectedWinner((match?.athlete2Id as any)?._id);
-        }, []);
-
-        return (
-            <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-                <div className="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-2xl p-8 flex flex-col gap-8 shadow-2xl">
-                    <h2 className="text-3xl font-black text-white uppercase tracking-tighter text-center">{t('modal.finalize')}</h2>
-
-                    <div className="flex flex-col gap-4">
-                        <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">{t('modal.selectWinner')}</label>
-                        <div className="grid grid-cols-2 gap-4">
-                            <button
-                                onClick={() => setSelectedWinner((match?.athlete1Id as any)?._id)}
-                                className={clsx(
-                                    "p-6 rounded-2xl border-2 transition-all flex flex-col items-center gap-2",
-                                    selectedWinner === (match?.athlete1Id as any)?._id
-                                        ? "bg-blue-600 border-blue-400 shadow-[0_0_30px_rgba(37,99,235,0.3)]"
-                                        : "bg-slate-800 border-slate-700 hover:bg-slate-700"
-                                )}
-                            >
-                                <span className="text-2xl font-black text-white uppercase text-center">{p1.name}</span>
-                                <span className="text-sm font-bold text-blue-200 opacity-70 uppercase tracking-widest">{p1.academy}</span>
-                            </button>
-
-                            <button
-                                onClick={() => setSelectedWinner((match?.athlete2Id as any)?._id)}
-                                className={clsx(
-                                    "p-6 rounded-2xl border-2 transition-all flex flex-col items-center gap-2",
-                                    selectedWinner === (match?.athlete2Id as any)?._id
-                                        ? "bg-blue-600 border-blue-400 shadow-[0_0_30px_rgba(37,99,235,0.3)]"
-                                        : "bg-slate-800 border-slate-700 hover:bg-slate-700"
-                                )}
-                            >
-                                <span className="text-2xl font-black text-white uppercase text-center">{p2.name}</span>
-                                <span className="text-sm font-bold text-blue-200 opacity-70 uppercase tracking-widest">{p2.academy}</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-4">
-                        <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">{t('modal.method')}</label>
-                        <div className="grid grid-cols-3 gap-3">
-                            {methods.map(m => (
-                                <button
-                                    key={m.value}
-                                    onClick={() => setMethod(m.value)}
-                                    className={clsx(
-                                        "px-4 py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all",
-                                        method === m.value
-                                            ? "bg-emerald-600 text-white shadow-lg scale-105"
-                                            : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
-                                    )}
-                                >
-                                    {m.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="flex gap-4 mt-4">
-                        <button
-                            onClick={() => setShowEndModal(false)}
-                            className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold uppercase tracking-widest rounded-xl transition"
-                        >
-                            {t('modal.cancel')}
-                        </button>
-                        <button
-                            onClick={() => endMatch(selectedWinner, method)}
-                            disabled={!selectedWinner}
-                            className={clsx(
-                                "flex-1 py-4 font-black uppercase tracking-widest rounded-xl transition shadow-lg",
-                                !selectedWinner
-                                    ? "bg-slate-800 text-slate-600 cursor-not-allowed"
-                                    : "bg-emerald-500 hover:bg-emerald-400 text-black shadow-emerald-500/20"
-                            )}
-                        >
-                            {t('modal.confirm')}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
     return (
         <div className="h-screen w-screen flex flex-col bg-black overflow-hidden font-sans selection:bg-yellow-500 selection:text-black">
-            {showEndModal && <EndMatchModal />}
+            {showEndModal && match && (
+                <EndMatchModal
+                    match={match}
+                    t={t}
+                    onClose={() => setShowEndModal(false)}
+                    onConfirm={endMatch}
+                />
+            )}
 
             {/* Nav Bar */}
             <div className="h-20 lg:h-24 flex items-center px-8 lg:px-12 bg-slate-900 border-b border-white/5 z-50 shrink-0">
@@ -321,9 +331,9 @@ const ControlTable = () => {
 
             {/* Scoreboard Area */}
             <div className="flex-1 flex min-h-0 overflow-hidden">
-                <ScoreCard name={p1.name} academy={p1.academy} score={match.score} isP1={true} />
+                <ScoreCard name={p1.name} academy={p1.academy} score={match.score} isP1={true} sendEvent={sendEvent} />
                 <div className="w-1 bg-white/5 h-full opacity-50" />
-                <ScoreCard name={p2.name} academy={p2.academy} score={match.score} isP1={false} />
+                <ScoreCard name={p2.name} academy={p2.academy} score={match.score} isP1={false} sendEvent={sendEvent} />
             </div>
         </div>
     );

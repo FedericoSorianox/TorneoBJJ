@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getBracket, getCategoryById } from '../api';
+import { getBracket, getCategoryById, finalizeBracket } from '../api';
 import clsx from 'clsx';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -12,6 +12,12 @@ const BracketView = () => {
     const [bracket, setBracket] = useState<any>(null);
     const [category, setCategory] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [isFinalizing, setIsFinalizing] = useState(false);
+    const [finalized, setFinalized] = useState(false);
+
+    useEffect(() => {
+        if (bracket) setFinalized(!!bracket.winnerId);
+    }, [bracket]);
 
     const processBracket = (bracketData: any) => {
         if (!bracketData || !bracketData.matches) return bracketData;
@@ -95,9 +101,16 @@ const BracketView = () => {
 
         return (
             <div key={match.id}
-                onClick={() => navigate(`/match/${match.id}`)}
+                onClick={() => {
+                    if (finalized) {
+                        alert("Esta categoría ya ha sido finalizada y no permite más cambios.");
+                        return;
+                    }
+                    navigate(`/match/${match.id}`);
+                }}
                 className={clsx(
-                    "relative flex flex-col w-64 bg-slate-800 rounded-lg border-2 shadow-xl transition-all hover:scale-[1.02] mb-4 shrink-0 cursor-pointer",
+                    "relative flex flex-col w-64 bg-slate-800 rounded-lg border-2 shadow-xl transition-all mb-4 shrink-0 cursor-pointer",
+                    finalized ? "opacity-75 cursor-not-allowed border-slate-700" : "hover:scale-[1.02]",
                     winnerId ? "border-green-600/50" : "border-slate-700",
                     isFinal && "border-yellow-500/50 ring-1 ring-yellow-500/20"
                 )}>
@@ -149,6 +162,36 @@ const BracketView = () => {
         );
     };
 
+    const handleFinalize = async () => {
+        if (!categoryId || isFinalizing) return;
+        
+        if (!window.confirm("¿Estás seguro de que quieres finalizar esta categoría? Se asignarán puntos de ranking a los ganadores.")) {
+            return;
+        }
+
+        setIsFinalizing(true);
+        try {
+            await finalizeBracket(categoryId);
+            setFinalized(true);
+            // Reload bracket to get updated state
+            const b = await getBracket(categoryId);
+            setBracket(processBracket(b));
+            alert("Categoría finalizada y puntos asignados.");
+        } catch (error: any) {
+            console.error(error);
+            alert(error.response?.data?.error || "Error al finalizar la categoría");
+        } finally {
+            setIsFinalizing(false);
+        }
+    };
+
+    const isBracketComplete = () => {
+        if (!bracket || !bracket.rounds) return false;
+        const lastRound = bracket.rounds[bracket.rounds.length - 1];
+        if (!lastRound || lastRound.length === 0) return false;
+        return !!lastRound[0].winnerId;
+    };
+
     const rounds = bracket.rounds || [];
     const consolationRounds = bracket.consolationRounds || [];
 
@@ -158,7 +201,7 @@ const BracketView = () => {
             <div className="shrink-0 p-6 bg-slate-900/50 border-b border-slate-800 flex justify-between items-center backdrop-blur-sm sticky top-0 z-50">
                 <div className="flex items-center gap-4">
                     <button onClick={() => navigate(-1)} className="p-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition">
-                        &larr; {t('common.back')}
+&larr; {t('common.back')}
                     </button>
                     <div>
                         <h1 className="text-2xl font-black italic tracking-tighter text-slate-100 uppercase">
@@ -169,8 +212,27 @@ const BracketView = () => {
                         </p>
                     </div>
                 </div>
-                <div className="flex gap-2">
-                    <div className="px-3 py-1 bg-green-500/10 border border-green-500/20 text-green-400 rounded text-xs font-bold uppercase tracking-wider animate-pulse">
+                <div className="flex gap-4">
+                    {finalized ? (
+                        <div className="px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 rounded-lg text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                             🏆 CATEGORY FINALIZED
+                        </div>
+                    ) : isBracketComplete() && (
+                        <button
+                            onClick={handleFinalize}
+                            disabled={isFinalizing}
+                            className={clsx(
+                                "px-6 py-2 rounded-lg font-black uppercase tracking-widest text-sm transition-all shadow-lg",
+                                isFinalizing 
+                                    ? "bg-slate-700 text-slate-500 cursor-not-allowed"
+                                    : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/20 scale-105"
+                            )}
+                        >
+                            {isFinalizing ? "Finalizando..." : "Finalizar Categoría"}
+                        </button>
+                    )}
+                    <div className="px-3 py-1 bg-green-500/10 border border-green-500/20 text-green-400 rounded text-xs font-bold uppercase tracking-wider flex items-center">
+                        <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse" />
                         Live Updates
                     </div>
                 </div>

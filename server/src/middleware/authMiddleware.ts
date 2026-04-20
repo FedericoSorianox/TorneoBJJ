@@ -21,10 +21,11 @@ export const protect = (req: AuthRequest, res: Response, next: NextFunction): vo
             // Add user to request
             req.user = decoded;
 
-            next();
+            return next();
         } catch (error) {
             console.error('Not authorized, token failed');
             res.status(401).json({ message: 'Not authorized, token failed' });
+            return;
         }
     }
 

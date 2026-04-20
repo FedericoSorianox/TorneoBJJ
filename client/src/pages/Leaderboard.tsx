@@ -109,8 +109,8 @@ const Leaderboard = () => {
                                         {athlete.stats?.submissions || 0}
                                     </span>
                                 </td>
-                                <td className="p-4 text-center font-mono text-slate-400 group-hover:text-yellow-400 transition">
-                                    {athlete.stats?.pointsScored || 0}
+                                <td className="p-4 text-center font-mono text-slate-400 group-hover:text-yellow-400 transition font-bold text-lg">
+                                    {athlete.rankingPoints || 0}
                                 </td>
                                 <td className="p-4 text-center">
                                     <div className="flex items-center justify-center gap-2">

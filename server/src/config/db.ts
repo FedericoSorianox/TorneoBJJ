@@ -8,7 +8,7 @@ export const connectDB = async () => {
         const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/bjj-tournaments');
         console.log(`MongoDB Connected: ${conn.connection.host}`);
     } catch (error) {
-        console.error(`Error: ${error}`);
-        process.exit(1);
+        console.error(`❌ MongoDB Connection Failed: ${error}`);
+        console.warn('⚠️ Server will continues without DB connection. Database operations will fail.');
     }
 };

@@ -2,6 +2,7 @@ import { Server, Socket } from 'socket.io';
 import Match, { IMatchEvent } from '../models/Match';
 import Athlete from '../models/Athlete';
 import RuleSet from '../models/RuleSet';
+import Bracket from '../models/Bracket';
 import { RulesEngine } from '../engine/RulesEngine';
 
 export const registerMatchHandlers = (io: Server, socket: Socket) => {
@@ -22,11 +23,14 @@ export const registerMatchHandlers = (io: Server, socket: Socket) => {
     const sendEvent = async (payload: { matchId: string, event: IMatchEvent }) => {
         const { matchId, event } = payload;
         try {
-            const match = await Match.findById(matchId).populate('tournamentId'); // We need tournament to get rules? 
-            // Actually, ruleSetId is on Tournament.
-            // Optimization: Cache rules or fetch.
-
+            const match = await Match.findById(matchId).populate('tournamentId');
             if (!match) return;
+
+            // Check if bracket is finalized
+            const bracket = await Bracket.findOne({ categoryId: match.categoryId });
+            if (bracket?.winnerId) {
+                return socket.emit('error', { message: 'La categoría ya ha sido finalizada. No se pueden realizar cambios.' });
+            }
 
             // Add to log
             if (event.type === 'undo') {
@@ -36,27 +40,12 @@ export const registerMatchHandlers = (io: Server, socket: Socket) => {
                 match.eventLog.push(event);
             }
 
-            // Recalculate Score
-            // Need to fetch RuleSet. 
-            // For MVP, we'll use a standard config or fetch it.
-            // match.tournamentId is an ObjectId, populated? 
-            // If we populated 'tournamentId', we can access its ruleSetId.
-            // Let's assume standard points for now or todo: fetch rules properly.
-
-            // Fetch RuleSet
-            // const tournament = await Tournament.findById(match.tournamentId);
-            // const ruleSet = await RuleSet.findById(tournament.ruleSetId);
-
-            // Optimization: Just hardcoding IBJJF defaults if not found for speed in this handler, 
-            // but ideally we fetch it.
             const defaultPoints = {
                 takedown: 2, sweep: 2, kneeOnBelly: 2, guardPass: 3, mount: 4, backTake: 4, advantage: 0, penalty: 0
             };
 
             const newScore = RulesEngine.calculateScore(match.eventLog, defaultPoints as any);
             match.score = newScore;
-
-            await match.save();
 
             await match.save();
 
@@ -80,10 +69,16 @@ export const registerMatchHandlers = (io: Server, socket: Socket) => {
             const match = await Match.findById(matchId);
             if (!match) return;
 
+            // Check if bracket is finalized
+            const bracket = await Bracket.findOne({ categoryId: match.categoryId });
+            if (bracket?.winnerId) {
+                return socket.emit('error', { message: 'La categoría ya ha sido finalizada.' });
+            }
+
             match.status = 'Finished';
             match.winnerId = winnerId;
             // match.method = method; // If we add method to schema
-            match.save();
+            await match.save();
 
             // Update Stats
             if (winnerId) {

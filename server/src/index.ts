@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
@@ -17,21 +17,23 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-const allowedOrigins = [
-    process.env.CLIENT_URL || "http://localhost:5173",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5174",
-    "http://localhost:5175",
-    "http://127.0.0.1:5175",
-    "http://localhost:5176",
-    "http://127.0.0.1:5176",
-    "https://app.the-basgers.com", // Old Production URL
-    "http://app.the-basgers.com",
-    "https://torneobjj.netlify.app", // New Netlify URL
-    "http://torneobjj.netlify.app"
-];
+
+// CORS Configuration
+const getAllowedOrigins = () => {
+    const envOrigins = process.env.ALLOWED_ORIGINS;
+    if (envOrigins) {
+        return envOrigins.split(',').map(origin => origin.trim());
+    }
+    return [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+        "https://torneobjj.netlify.app"
+    ];
+};
+
+const allowedOrigins = getAllowedOrigins();
 
 const io = new Server(server, {
     cors: {
@@ -48,10 +50,13 @@ app.use(cors({
     optionsSuccessStatus: 200
 }));
 
-console.log("CORS Configured with allowed origins:", allowedOrigins);
-
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
+
+// Health check endpoint (No DB required)
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date() });
+});
 
 // Routes
 app.use('/api/athletes', athleteRoutes);
@@ -79,22 +84,34 @@ io.on('connection', (socket) => {
     });
 });
 
-const PORT = process.env.PORT || 5001;
-
-// Health check endpoint (No DB required)
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok', timestamp: new Date() });
-});
-
-// Start Server immediately
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-
-    // Connect to DB after server is running
-    connectDB().then(async () => {
-        console.log('MongoDB Connected successfully');
-        await seedAdmin();
-    }).catch(err => {
-        console.error('MongoDB Connection Failed:', err);
+// Global Error Handler
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    console.error(`[Error] ${err.stack || err.message}`);
+    const statusCode = err.status || 500;
+    res.status(statusCode).json({
+        error: err.message || 'Internal Server Error',
+        stack: process.env.NODE_ENV === 'production' ? null : err.stack
     });
 });
+
+const PORT = process.env.PORT || 5001;
+
+// Startup Function
+const startServer = async () => {
+    try {
+        await connectDB();
+        console.log('✅ MongoDB Connected successfully');
+        
+        await seedAdmin();
+        
+        server.listen(PORT, () => {
+            console.log(`🚀 Server running on port ${PORT}`);
+            console.log("CORS Configured with allowed origins:", allowedOrigins);
+        });
+    } catch (error) {
+        console.error('❌ Failed to start server:', error);
+        process.exit(1);
+    }
+};
+
+startServer();
