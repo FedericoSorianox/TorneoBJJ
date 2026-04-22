@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import io from 'socket.io-client';
-import { getMatch } from '../api';
+import { getMatch, SOCKET_URL } from '../api';
 import clsx from 'clsx';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -20,9 +20,9 @@ interface Match {
     eventLog: any[];
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
-const SOCKET_URL = API_URL.replace(/\/api$/, '');
-const socket = io(SOCKET_URL);
+const socket = io(SOCKET_URL, {
+    path: '/torneobjj/socket.io'
+});
 
 const ScoreCard = ({ name, academy, score, isP1, sendEvent }: { name: string, academy: string, score: MatchScore, isP1: boolean, sendEvent: (type: string, athleteSide: string, points?: number) => void }) => {
     const athleteSide = isP1 ? 'p1' : 'p2';

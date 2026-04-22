@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getLeaderboard } from '../api';
+import { getLeaderboard, SOCKET_URL } from '../api';
 import clsx from 'clsx';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -89,7 +89,7 @@ const Leaderboard = () => {
                                 <td className="p-4">
                                     <div className="flex items-center gap-3">
                                         {athlete.photo ? (
-                                            <img src={`http://localhost:5001${athlete.photo}`} alt={athlete.name} className="w-10 h-10 rounded-full object-cover border border-slate-600" />
+                                            <img src={`${SOCKET_URL}${athlete.photo}`} alt={athlete.name} className="w-10 h-10 rounded-full object-cover border border-slate-600" />
                                         ) : (
                                             <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-slate-500 font-bold text-sm">
                                                 {athlete.name.charAt(0)}

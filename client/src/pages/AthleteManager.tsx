@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getAthletes, createAthlete, deleteAthlete, updateAthlete, redeemPoints, addPoints } from '../api';
+import { getAthletes, createAthlete, deleteAthlete, updateAthlete, redeemPoints, addPoints, SOCKET_URL } from '../api';
 import clsx from 'clsx';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -219,7 +219,7 @@ const AthleteManager = () => {
                             >
                                 <div className="flex items-center gap-4">
                                     {a.photo ? (
-                                        <img src={`http://localhost:5001${a.photo}`} alt={a.name} className="w-12 h-12 rounded-full object-cover border border-slate-600" />
+                                        <img src={`${SOCKET_URL}${a.photo}`} alt={a.name} className="w-12 h-12 rounded-full object-cover border border-slate-600" />
                                     ) : (
                                         <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center text-slate-500 font-bold">
                                             {a.name.charAt(0)}

@@ -1,7 +1,17 @@
 import axios from 'axios';
 
+// Environment-aware configuration
+const isProd = import.meta.env.PROD;
+
+// If VITE_API_URL is provided, use it. 
+// Otherwise, default to relative path in production, and localhost in development.
+export const API_BASE_URL = import.meta.env.VITE_API_URL || (isProd ? '/torneobjj/api' : 'http://localhost:5001/api');
+
+// The socket and image base URL is the root (one level up from /api)
+export const SOCKET_URL = API_BASE_URL.replace(/\/api$/, '');
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || '/torneobjj/api'
+    baseURL: API_BASE_URL
 });
 
 api.interceptors.request.use((config) => {

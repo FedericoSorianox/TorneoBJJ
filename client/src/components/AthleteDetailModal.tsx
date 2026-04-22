@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import clsx from 'clsx';
+import { SOCKET_URL } from '../api';
 
 
 export interface AthleteData {
@@ -68,7 +69,7 @@ const AthleteDetailModal = ({ isOpen, onClose, athlete }: AthleteDetailModalProp
                     <div className="absolute -bottom-16 left-8 flex items-end drop-shadow-lg">
                         {athlete.photo ? (
                             <img
-                                src={`http://localhost:5001${athlete.photo}`}
+                                src={`${SOCKET_URL}${athlete.photo}`}
                                 alt={athlete.name}
                                 className="w-32 h-32 rounded-full border-4 border-slate-900 object-cover bg-slate-800"
                             />
