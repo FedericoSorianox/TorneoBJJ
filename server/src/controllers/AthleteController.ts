@@ -29,7 +29,7 @@ export const createAthlete = asyncHandler(async (req: Request, res: Response) =>
 
 export const getAthletes = asyncHandler(async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
+    const limit = parseInt(req.query.limit as string) || 1000;
     const search = req.query.search as string || '';
 
     const query: any = {};
