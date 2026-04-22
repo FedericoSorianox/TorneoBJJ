@@ -1,7 +1,13 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { SOCKET_URL } from '../api';
 
+export interface BeltStats {
+    wins: number;
+    losses: number;
+    submissions: number;
+    pointsScored: number;
+}
 
 export interface AthleteData {
     _id: string;
@@ -13,11 +19,13 @@ export interface AthleteData {
     gender?: string;
     age?: number;
     photo?: string;
-    stats?: {
-        wins: number;
-        losses: number;
-        submissions: number;
-        pointsScored: number;
+    stats?: BeltStats;
+    beltStats?: {
+        White: BeltStats;
+        Blue: BeltStats;
+        Purple: BeltStats;
+        Brown: BeltStats;
+        Black: BeltStats;
     };
     rankingPoints?: number;
     balance?: number;
@@ -29,8 +37,11 @@ interface AthleteDetailModalProps {
     athlete: AthleteData | null;
 }
 
+const BELTS = ['White', 'Blue', 'Purple', 'Brown', 'Black'];
+
 const AthleteDetailModal = ({ isOpen, onClose, athlete }: AthleteDetailModalProps) => {
     const modalRef = useRef<HTMLDivElement>(null);
+    const [viewMode, setViewMode] = useState<'Total' | string>('Total');
 
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
@@ -40,6 +51,7 @@ const AthleteDetailModal = ({ isOpen, onClose, athlete }: AthleteDetailModalProp
         if (isOpen) {
             document.addEventListener('keydown', handleEscape);
             document.body.style.overflow = 'hidden';
+            setViewMode('Total');
         }
 
         return () => {
@@ -49,6 +61,16 @@ const AthleteDetailModal = ({ isOpen, onClose, athlete }: AthleteDetailModalProp
     }, [isOpen, onClose]);
 
     if (!isOpen || !athlete) return null;
+
+    const currentStats = viewMode === 'Total' 
+        ? athlete.stats 
+        : (athlete.beltStats as any)?.[viewMode];
+
+    // Filter belts that have at least one win, loss, or sub
+    const availableBelts = BELTS.filter(belt => {
+        const s = (athlete.beltStats as any)?.[belt];
+        return s && (s.wins > 0 || s.losses > 0 || s.submissions > 0);
+    });
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
@@ -122,29 +144,67 @@ const AthleteDetailModal = ({ isOpen, onClose, athlete }: AthleteDetailModalProp
                     </div>
 
                     {/* Performance Stats */}
-                    {athlete.stats && (
-                        <div className="bg-slate-800 rounded-xl p-5 border border-slate-700">
-                            <h3 className="text-slate-300 font-semibold mb-4 border-b border-slate-700 pb-2">Performance Stats</h3>
+                    <div className="bg-slate-800 rounded-xl p-5 border border-slate-700">
+                        <div className="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
+                            <h3 className="text-slate-300 font-semibold">Performance Stats</h3>
+                            
+                            {/* Belt Selector Pills */}
+                            {availableBelts.length > 0 && (
+                                <div className="flex gap-1 bg-slate-900 p-1 rounded-lg text-[10px] font-bold uppercase tracking-tighter">
+                                    <button 
+                                        onClick={() => setViewMode('Total')}
+                                        className={clsx(
+                                            "px-2 py-1 rounded transition-colors",
+                                            viewMode === 'Total' ? "bg-blue-600 text-white" : "text-slate-500 hover:text-slate-300"
+                                        )}
+                                    >
+                                        Total
+                                    </button>
+                                    {availableBelts.map(belt => (
+                                        <button 
+                                            key={belt}
+                                            onClick={() => setViewMode(belt)}
+                                            className={clsx(
+                                                "px-2 py-1 rounded transition-colors",
+                                                viewMode === belt 
+                                                    ? (belt === 'White' ? "bg-slate-200 text-slate-900" :
+                                                       belt === 'Blue' ? "bg-blue-500 text-white" :
+                                                       belt === 'Purple' ? "bg-purple-500 text-white" :
+                                                       belt === 'Brown' ? "bg-amber-800 text-white" :
+                                                       "bg-red-600 text-white")
+                                                    : "text-slate-500 hover:text-slate-300"
+                                            )}
+                                        >
+                                            {belt.charAt(0)}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {currentStats ? (
                             <div className="grid grid-cols-4 gap-2 text-center">
                                 <div>
-                                    <div className="text-2xl font-bold text-green-400">{athlete.stats.wins}</div>
+                                    <div className="text-2xl font-bold text-green-400">{currentStats.wins}</div>
                                     <div className="text-xs text-slate-500 uppercase">Wins</div>
                                 </div>
                                 <div>
-                                    <div className="text-2xl font-bold text-red-400">{athlete.stats.losses}</div>
+                                    <div className="text-2xl font-bold text-red-400">{currentStats.losses}</div>
                                     <div className="text-xs text-slate-500 uppercase">Loss</div>
                                 </div>
                                 <div>
-                                    <div className="text-2xl font-bold text-purple-400">{athlete.stats.submissions}</div>
+                                    <div className="text-2xl font-bold text-purple-400">{currentStats.submissions}</div>
                                     <div className="text-xs text-slate-500 uppercase">Subs</div>
                                 </div>
                                 <div>
-                                    <div className="text-2xl font-bold text-yellow-400">{athlete.stats.pointsScored}</div>
+                                    <div className="text-2xl font-bold text-yellow-400">{currentStats.pointsScored}</div>
                                     <div className="text-xs text-slate-500 uppercase">Pts</div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        ) : (
+                            <div className="py-4 text-center text-slate-500 italic">No stats available for this view</div>
+                        )}
+                    </div>
 
                     {/* Footer / Balance */}
                     <div className="mt-6 flex justify-between items-center bg-slate-900/50 p-4 rounded-lg border border-slate-800">

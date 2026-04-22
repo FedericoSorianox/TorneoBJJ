@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import Match, { IMatchEvent } from '../models/Match';
 import Athlete from '../models/Athlete';
+import Category from '../models/Category';
 import RuleSet from '../models/RuleSet';
 import Bracket from '../models/Bracket';
 import { RulesEngine } from '../engine/RulesEngine';
@@ -82,6 +83,9 @@ export const registerMatchHandlers = (io: Server, socket: Socket) => {
 
             // Update Stats
             if (winnerId) {
+                const category = await Category.findById(match.categoryId);
+                const belt = category ? category.belt : 'White';
+
                 // Determine Points for win (Updated: 100 + 50 for sub)
                 const winPoints = 100;
                 const submissionBonus = method === 'Submission' ? 50 : 0;
@@ -96,14 +100,20 @@ export const registerMatchHandlers = (io: Server, socket: Socket) => {
                         'stats.submissions': method === 'Submission' ? 1 : 0,
                         'stats.pointsScored': pointsInMatch,
                         'rankingPoints': totalAward,
-                        'balance': totalAward
+                        'balance': totalAward,
+                        [`beltStats.${belt}.wins`]: 1,
+                        [`beltStats.${belt}.submissions`]: method === 'Submission' ? 1 : 0,
+                        [`beltStats.${belt}.pointsScored`]: pointsInMatch
                     }
                 });
 
                 const loserId = match.athlete1Id?.toString() === winnerId ? match.athlete2Id : match.athlete1Id;
                 if (loserId) {
                     await Athlete.findByIdAndUpdate(loserId, {
-                        $inc: { 'stats.losses': 1 }
+                        $inc: { 
+                            'stats.losses': 1,
+                            [`beltStats.${belt}.losses`]: 1
+                        }
                     });
                 }
             }
