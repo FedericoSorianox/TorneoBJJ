@@ -55,15 +55,15 @@ const Leaderboard = () => {
     if (loading) return <div className="p-10 text-2xl center-content text-slate-400 animate-pulse">{t('leaderboard.loading')}</div>;
 
     return (
-        <div className="h-full flex flex-col p-8 bg-slate-900 overflow-auto">
+        <div className="p-4 md:p-8 bg-slate-900">
             <div className="flex justify-between items-center mb-8">
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
                     {t('leaderboard.title')}
                 </h1>
                 <Link to="/" className="text-slate-400 hover:text-white transition">{t('common.backHome')}</Link>
             </div>
 
-            <div className="bg-slate-800 rounded-xl overflow-hidden shadow-xl border border-slate-700">
+            <div className="bg-slate-800 rounded-xl overflow-x-auto shadow-xl border border-slate-700">
                 <table className="w-full text-left border-collapse">
                     <thead className="bg-slate-900 border-b border-slate-700">
                         <tr>
