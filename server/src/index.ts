@@ -66,13 +66,22 @@ apiRouter.use('/categories', categoryRoutes);
 apiRouter.use('/auth', authRoutes);
 
 apiRouter.get('/leaderboard', (req, res) => {
-    res.redirect('/api/athletes/leaderboard');
+    res.redirect('/athletes/leaderboard');
 });
 
-// Health check endpoint (No DB required)
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok', timestamp: new Date() });
-});
+// Health check function
+const healthCheck = (req: Request, res: Response) => {
+    res.status(200).json({ 
+        status: 'ok', 
+        uptime: process.uptime(),
+        timestamp: new Date(),
+        version: '1.0.1'
+    });
+};
+
+// Mount health check under multiple paths to ensure it's reachable
+app.get('/health', healthCheck);
+app.get('/torneobjj/health', healthCheck);
 
 // Mount API routes under both /api and /torneobjj/api for compatibility
 app.use('/api', apiRouter);
@@ -83,12 +92,16 @@ app.use('/torneobjj/api', apiRouter);
 const potentialPaths = [
     path.join(__dirname, '../../client/dist'),
     path.join(process.cwd(), 'client/dist'),
+    path.join(process.cwd(), 'server/client/dist'),
     path.join(process.cwd(), '../client/dist')
 ];
 
 let clientDistPath = potentialPaths[0];
+console.log('🔍 Checking potential static file paths...');
 for (const p of potentialPaths) {
-    if (fs.existsSync(p)) {
+    const exists = fs.existsSync(p);
+    console.log(`   - ${p}: ${exists ? '✅ FOUND' : '❌ NOT FOUND'}`);
+    if (exists) {
         clientDistPath = p;
         break;
     }
@@ -99,6 +112,7 @@ app.use('/torneobjj', express.static(clientDistPath));
 // Initial Redirect from /torneobjj to /torneobjj/ (Vite needs the trailing slash)
 app.get('/torneobjj', (req, res, next) => {
     if (!req.url.endsWith('/')) {
+        console.log('🔄 Redirecting /torneobjj to /torneobjj/');
         return res.redirect(301, '/torneobjj/');
     }
     next();
@@ -110,7 +124,8 @@ app.get('/torneobjj/*', (req, res) => {
     if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
     } else {
-        res.status(404).send('App (index.html) not found in client/dist');
+        console.error(`❌ SPA Fallback failing: index.html not found at ${indexPath}`);
+        res.status(404).send('App (index.html) not found in client/dist. Path checked: ' + indexPath);
     }
 });
 

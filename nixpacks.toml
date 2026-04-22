@@ -1,0 +1,6 @@
+[build]
+installCommand = "npm ci"
+buildCommand = "npm run build"
+
+[start]
+command = "npm start"
