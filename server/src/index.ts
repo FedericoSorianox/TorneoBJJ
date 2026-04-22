@@ -3,6 +3,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import { connectDB } from './config/db';
 
 import athleteRoutes from './routes/athleteRoutes';
@@ -29,13 +30,15 @@ const getAllowedOrigins = () => {
         "http://127.0.0.1:5173",
         "http://localhost:5174",
         "http://127.0.0.1:5174",
-        "https://torneobjj.netlify.app"
+        "https://torneobjj.netlify.app",
+        "https://the-badgers.com"
     ];
 };
 
 const allowedOrigins = getAllowedOrigins();
 
 const io = new Server(server, {
+    path: '/torneobjj/socket.io',
     cors: {
         origin: allowedOrigins,
         methods: ["GET", "POST", "PUT", "DELETE"],
@@ -53,25 +56,47 @@ app.use(cors({
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
+// API Routes
+const apiRouter = express.Router();
+apiRouter.use('/athletes', athleteRoutes);
+apiRouter.use('/tournaments', tournamentRoutes);
+apiRouter.use('/matches', matchRoutes);
+apiRouter.use('/categories', categoryRoutes);
+apiRouter.use('/auth', authRoutes);
+
+apiRouter.get('/leaderboard', (req, res) => {
+    res.redirect('/api/athletes/leaderboard');
+});
+
 // Health check endpoint (No DB required)
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date() });
 });
 
-// Routes
-app.use('/api/athletes', athleteRoutes);
-app.use('/api/tournaments', tournamentRoutes);
-app.use('/api/matches', matchRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/auth', authRoutes);
+// Mount API routes under both /api and /torneobjj/api for compatibility
+app.use('/api', apiRouter);
+app.use('/torneobjj/api', apiRouter);
 
-// Legacy/Compat routes
-app.get('/api/leaderboard', (req, res) => {
-    res.redirect('/api/athletes/leaderboard');
+// Serve Static Files from Client
+const clientDistPath = path.join(__dirname, '../../client/dist');
+app.use('/torneobjj', express.static(clientDistPath));
+
+// Initial Redirect from /torneobjj to /torneobjj/ (Vite needs the trailing slash sometimes)
+app.get('/torneobjj', (req, res, next) => {
+    if (!req.url.endsWith('/')) {
+        return res.redirect(301, '/torneobjj/');
+    }
+    next();
 });
 
+// SPA Fallback: Serve index.html for any sub-route of /torneobjj
+app.get('/torneobjj/*', (req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+});
+
+// Root catch-all
 app.get('/', (req, res) => {
-    res.send('BJJ Tournament Manager API');
+    res.send('BJJ Tournament Manager API - Visit /torneobjj for the app');
 });
 
 // Socket.io
@@ -107,6 +132,7 @@ const startServer = async () => {
         server.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
             console.log("CORS Configured with allowed origins:", allowedOrigins);
+            console.log("Serving client from:", clientDistPath);
         });
     } catch (error) {
         console.error('❌ Failed to start server:', error);
