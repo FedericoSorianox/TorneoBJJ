@@ -119,7 +119,7 @@ app.get('/torneobjj', (req, res, next) => {
 });
 
 // SPA Fallback: Serve index.html for any sub-route of /torneobjj
-app.get('/torneobjj/(.*)', (req, res) => {
+app.get('/torneobjj/*splat', (req, res) => {
     const indexPath = path.join(clientDistPath, 'index.html');
     if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
