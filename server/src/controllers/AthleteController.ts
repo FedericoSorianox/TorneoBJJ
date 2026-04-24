@@ -31,6 +31,8 @@ export const getAthletes = asyncHandler(async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 1000;
     const search = req.query.search as string || '';
+    const belt = req.query.belt as string || '';
+    const weight = req.query.weight as string || '';
 
     const query: any = {};
     if (search) {
@@ -38,6 +40,17 @@ export const getAthletes = asyncHandler(async (req: Request, res: Response) => {
             { name: { $regex: search, $options: 'i' } },
             { academy: { $regex: search, $options: 'i' } }
         ];
+    }
+
+    if (belt) {
+        query.belt = belt;
+    }
+
+    if (weight) {
+        const weightNum = parseFloat(weight);
+        if (!isNaN(weightNum)) {
+            query.weight = { $lte: weightNum };
+        }
     }
 
     const total = await Athlete.countDocuments(query);

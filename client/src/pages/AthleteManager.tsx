@@ -21,6 +21,19 @@ interface Athlete {
     birthDate?: string;
 }
 
+const BELTS: [string, string][] = [
+    ['White', 'Blanco'],
+    ['Blue', 'Azul'],
+    ['Purple', 'Violeta'],
+    ['Brown', 'Marrón'],
+    ['Black', 'Negro'],
+];
+
+const GENDERS: [string, string][] = [
+    ['Male', 'Masculino'],
+    ['Female', 'Femenino'],
+];
+
 const AthleteManager = () => {
     const { t } = useLanguage();
     const { user } = useAuth();
@@ -40,13 +53,22 @@ const AthleteManager = () => {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(true);
 
+    const [filters, setFilters] = useState({
+        search: '',
+        belt: '',
+        weight: ''
+    });
+
     const load = () => {
-        getAthletes().then(setAthletes).finally(() => setLoading(false));
+        getAthletes(filters).then(setAthletes).finally(() => setLoading(false));
     };
 
     useEffect(() => {
-        load();
-    }, []);
+        const timer = setTimeout(() => {
+            load();
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [filters]);
 
     useEffect(() => {
         if (form.birthDate) {
@@ -89,8 +111,6 @@ const AthleteManager = () => {
         e.preventDefault();
 
         const errors = validateForm();
-        // Allow implied age if birthDate is present
-        // But validateForm checks form.age directly which is updated by effect.
 
         if (errors.length > 0) {
             toast.error(errors.join('\n'));
@@ -112,8 +132,6 @@ const AthleteManager = () => {
             formData.append('photo', selectedFile);
         }
 
-        console.log("Submitting form. Mode:", editingId ? "EDIT" : "CREATE");
-
         try {
             if (editingId) {
                 await updateAthlete(editingId, formData);
@@ -124,7 +142,7 @@ const AthleteManager = () => {
             resetForm();
             load();
         } catch (error) {
-            console.error("Failed to save athlete", error);
+            console.error('Failed to save athlete', error);
             toast.error(t('common.error'));
         }
     };
@@ -144,7 +162,7 @@ const AthleteManager = () => {
             wins: stats.wins || 0,
             submissions: stats.submissions || 0
         });
-        setSelectedFile(null); // Clear file input when editing start
+        setSelectedFile(null);
     };
 
     const resetForm = () => {
@@ -178,7 +196,7 @@ const AthleteManager = () => {
             load();
         } catch (error) {
             console.error(error);
-            toast.error("Error");
+            toast.error(t('common.error'));
         }
     };
 
@@ -186,17 +204,9 @@ const AthleteManager = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const handleViewAthlete = (athlete: Athlete) => {
-        // Map local Athlete to AthleteData
-        // Local Athlete (lines 9-20) has: _id, name, academy, belt, weight, gender, age, photo, balance, birthDate
-        // AthleteData (Modal) needs: _id, name, nickname, academy, belt, weight, gender, age, photo, stats, rankingPoints, balance
-
-        // We might be missing stats in the list view response? 
-        // If necessary we can pass what we have, or fetch details. 
-        // Assuming list view has basic info. Modal handles missing stats gracefully.
-
         const data: AthleteData = {
             ...athlete,
-            role: 'athlete' // Add if needed or ignore
+            role: 'athlete'
         } as unknown as AthleteData;
 
         setSelectedAthlete(data);
@@ -209,7 +219,41 @@ const AthleteManager = () => {
             <div className="flex gap-8 h-full overflow-hidden">
                 {/* List */}
                 <div className="flex-1 bg-slate-800 rounded p-6 overflow-auto">
-                    <h2 className="text-3xl font-bold mb-6">{t('athletes.title')}</h2>
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <h2 className="text-3xl font-bold">{t('athletes.title')}</h2>
+                        <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                            <input
+                                type="text"
+                                placeholder={t('common.search')}
+                                className="bg-slate-900 border border-slate-700 rounded px-3 py-1 text-sm focus:border-blue-500 outline-none w-full md:w-48"
+                                value={filters.search}
+                                onChange={e => setFilters({ ...filters, search: e.target.value })}
+                            />
+                            <select
+                                className="bg-slate-900 border border-slate-700 rounded px-3 py-1 text-sm focus:border-blue-500 outline-none"
+                                value={filters.belt}
+                                onChange={e => setFilters({ ...filters, belt: e.target.value })}
+                            >
+                                <option value="">{t('athletes.form.belt')}: {t('common.all')}</option>
+                                {BELTS.map(([val, label]) => <option key={val} value={val}>{label}</option>)}
+                            </select>
+                            <input
+                                type="number"
+                                placeholder={t('athletes.filter.maxWeight')}
+                                className="bg-slate-900 border border-slate-700 rounded px-3 py-1 text-sm focus:border-blue-500 outline-none w-28"
+                                value={filters.weight}
+                                onChange={e => setFilters({ ...filters, weight: e.target.value })}
+                            />
+                            {(filters.search || filters.belt || filters.weight) && (
+                                <button
+                                    onClick={() => setFilters({ search: '', belt: '', weight: '' })}
+                                    className="text-slate-400 hover:text-white text-sm"
+                                >
+                                    {t('common.clear')}
+                                </button>
+                            )}
+                        </div>
+                    </div>
                     <div className="space-y-4">
                         {(Array.isArray(athletes) ? athletes : []).map(a => (
                             <div
@@ -234,29 +278,29 @@ const AthleteManager = () => {
                                 {user?.role === 'admin' && (
                                     <div className="flex gap-4" onClick={(e) => e.stopPropagation()}>
                                         <button onClick={async () => {
-                                            const amount = prompt("Enter points to redeem:");
+                                            const amount = prompt(t('athletes.prompts.redeem'));
                                             if (amount && !isNaN(Number(amount))) {
                                                 try {
                                                     await redeemPoints(a._id, Number(amount));
-                                                    toast.success("Points redeemed!");
+                                                    toast.success(t('athletes.toasts.redeemed'));
                                                     load();
                                                 } catch (e) {
-                                                    alert("Failed to redeem (insufficent funds?)");
+                                                    alert(t('athletes.errors.insufficient'));
                                                 }
                                             }
-                                        }} className="text-green-400 hover:text-green-300 font-bold" title="Redeem Points">🎁</button>
+                                        }} className="text-green-400 hover:text-green-300 font-bold" title={t('athletes.prompts.redeem')}>🎁</button>
                                         <button onClick={async () => {
-                                            const amount = prompt("Admin: Enter points to add:");
+                                            const amount = prompt(t('athletes.prompts.award'));
                                             if (amount && !isNaN(Number(amount))) {
                                                 try {
                                                     await addPoints(a._id, Number(amount));
-                                                    toast.success("Points awarded!");
+                                                    toast.success(t('athletes.toasts.awarded'));
                                                     load();
                                                 } catch (e) {
-                                                    alert("Failed to add points");
+                                                    alert(t('athletes.errors.awardFailed'));
                                                 }
                                             }
-                                        }} className="text-yellow-400 hover:text-yellow-300 font-bold" title="Award Points">💰</button>
+                                        }} className="text-yellow-400 hover:text-yellow-300 font-bold" title={t('athletes.prompts.award')}>💰</button>
                                         <button onClick={() => handleEdit(a)} className="text-blue-400 hover:text-blue-300 font-bold">{t('common.edit')}</button>
                                         <button onClick={(e) => handleDelete(a._id, e)} className="text-red-500 hover:text-red-400">{t('common.delete')}</button>
                                     </div>
@@ -302,14 +346,14 @@ const AthleteManager = () => {
                                     <label className="block text-slate-400 text-sm">{t('athletes.form.belt')}</label>
                                     <select className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
                                         value={form.belt} onChange={e => setForm({ ...form, belt: e.target.value })}>
-                                        {['White', 'Blue', 'Purple', 'Brown', 'Black'].map(b => <option key={b}>{b}</option>)}
+                                        {BELTS.map(([val, label]) => <option key={val} value={val}>{label}</option>)}
                                     </select>
                                 </div>
                                 <div className="flex-1">
                                     <label className="block text-slate-400 text-sm">{t('athletes.form.gender')}</label>
                                     <select className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
                                         value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })}>
-                                        {['Male', 'Female'].map(g => <option key={g}>{g}</option>)}
+                                        {GENDERS.map(([val, label]) => <option key={val} value={val}>{label}</option>)}
                                     </select>
                                 </div>
                             </div>
@@ -322,7 +366,7 @@ const AthleteManager = () => {
                             </div>
                             <div className="flex gap-2">
                                 <div className="flex-1">
-                                    <label className="block text-slate-400 text-sm">{t('athletes.form.birthDate') || "Fecha de Nacimiento"}</label>
+                                    <label className="block text-slate-400 text-sm">{t('athletes.form.birthDate')}</label>
                                     <input type="date" className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
                                         value={form.birthDate} onChange={e => setForm({ ...form, birthDate: e.target.value })} />
                                 </div>
@@ -340,12 +384,12 @@ const AthleteManager = () => {
                             </div>
                             <div className="flex gap-2">
                                 <div className="flex-1">
-                                    <label className="block text-slate-400 text-sm">{t('athletes.form.wins') || "Wins"}</label>
+                                    <label className="block text-slate-400 text-sm">{t('athletes.form.wins')}</label>
                                     <input type="number" className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
                                         value={form.wins} onChange={e => setForm({ ...form, wins: Number(e.target.value) })} />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-slate-400 text-sm">{t('athletes.form.submissions') || "Submissions"}</label>
+                                    <label className="block text-slate-400 text-sm">{t('athletes.form.submissions')}</label>
                                     <input type="number" className="w-full p-2 bg-slate-900 rounded border border-slate-700 focus:border-blue-500 outline-none"
                                         value={form.submissions} onChange={e => setForm({ ...form, submissions: Number(e.target.value) })} />
                                 </div>
@@ -364,7 +408,7 @@ const AthleteManager = () => {
                 onClose={() => setIsModalOpen(false)}
                 athlete={selectedAthlete}
             />
-        </div >
+        </div>
     );
 };
 

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import { createContext, useState, useContext, type ReactNode } from 'react';
 
 type Language = 'en' | 'es';
 
@@ -25,6 +25,17 @@ const translations: Record<Language, Record<string, string>> = {
         'common.create': 'Create',
         'common.confirm': 'Confirm',
         'common.error': 'An error occurred',
+        'common.search': 'Search',
+        'common.all': 'All',
+        'common.clear': 'Clear',
+        'nav.logout': 'Logout',
+        'nav.addUser': '+ User',
+        'athletes.prompts.redeem': 'Enter points to redeem:',
+        'athletes.prompts.award': 'Admin: Enter points to add:',
+        'athletes.toasts.redeemed': 'Points redeemed!',
+        'athletes.toasts.awarded': 'Points awarded!',
+        'athletes.errors.insufficient': 'Failed to redeem (insufficient funds?)',
+        'athletes.errors.awardFailed': 'Failed to add points',
 
         'tournaments.title': 'Tournaments',
         'tournaments.new': '+ New Tournament',
@@ -76,6 +87,7 @@ const translations: Record<Language, Record<string, string>> = {
         'athletes.form.updateBtn': 'Update Athlete',
         'athletes.deleteConfirm': 'Are you sure you want to delete this athlete?',
         'athletes.noAthletes': 'No athletes found.',
+        'athletes.filter.maxWeight': 'Max Weight (kg)',
 
         'scoreboard.loading': 'LOADING SCOREBOARD...',
         'scoreboard.endMatch': 'End Match',
@@ -126,6 +138,17 @@ const translations: Record<Language, Record<string, string>> = {
         'common.create': 'Crear',
         'common.confirm': 'Confirmar',
         'common.error': 'Ocurrió un error',
+        'common.search': 'Buscar',
+        'common.all': 'Todos',
+        'common.clear': 'Limpiar',
+        'nav.logout': 'Cerrar Sesión',
+        'nav.addUser': '+ Usuario',
+        'athletes.prompts.redeem': 'Ingresa puntos a canjear:',
+        'athletes.prompts.award': 'Admin: Ingresa puntos a sumar:',
+        'athletes.toasts.redeemed': '¡Puntos canjeados!',
+        'athletes.toasts.awarded': '¡Puntos otorgados!',
+        'athletes.errors.insufficient': 'Error al canjear (¿fondos insuficientes?)',
+        'athletes.errors.awardFailed': 'Error al sumar puntos',
 
         'tournaments.title': 'Torneos',
         'tournaments.new': '+ Nuevo Torneo',
@@ -177,6 +200,7 @@ const translations: Record<Language, Record<string, string>> = {
         'athletes.form.updateBtn': 'Actualizar Atleta',
         'athletes.deleteConfirm': '¿Estás seguro de que deseas eliminar este atleta?',
         'athletes.noAthletes': 'No se encontraron atletas.',
+        'athletes.filter.maxWeight': 'Peso máx. (kg)',
 
         'scoreboard.loading': 'CARGANDO MARCADOR...',
         'scoreboard.endMatch': 'Finalizar Lucha',
@@ -216,7 +240,7 @@ const translations: Record<Language, Record<string, string>> = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-    const [language, setLanguage] = useState<Language>('en');
+    const [language, setLanguage] = useState<Language>('es');
 
     const toggleLanguage = () => {
         setLanguage(prev => prev === 'en' ? 'es' : 'en');

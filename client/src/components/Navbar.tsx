@@ -32,19 +32,13 @@ const Navbar = () => {
                     </div>
                     <div className="hidden md:block">
                         <div className="ml-4 flex items-center md:ml-6">
-                            <button
-                                onClick={toggleLanguage}
-                                className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded text-xs font-bold uppercase mr-4"
-                            >
-                                {language === 'en' ? 'ES' : 'EN'}
-                            </button>
                             <span className="text-gray-300 text-sm mr-4">
                                 {user.username} ({user.role})
                             </span>
                             {user.role === 'admin' && (
                                 <div className="flex items-center">
                                     <Link to="/users/new" className="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded mr-4">
-                                        + User
+                                        {t('nav.addUser')}
                                     </Link>
                                     <span className="text-xs bg-red-600 text-white px-2 py-1 rounded mr-4">Admin</span>
                                 </div>
@@ -53,7 +47,7 @@ const Navbar = () => {
                                 onClick={handleLogout}
                                 className="px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                             >
-                                Logout
+                                {t('nav.logout')}
                             </button>
                         </div>
                     </div>
