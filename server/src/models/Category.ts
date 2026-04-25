@@ -8,6 +8,7 @@ export interface ICategory extends Document {
     ageClass: 'Juvenile' | 'Adult' | 'Master 1' | 'Master 2'; // Simplified
     weightClass: string; // e.g. "Middle", "Light"
     athleteIds: mongoose.Types.ObjectId[];
+    durationSeconds?: number;
 }
 
 const CategorySchema: Schema = new Schema({
@@ -17,7 +18,8 @@ const CategorySchema: Schema = new Schema({
     belt: { type: String, enum: ['White', 'Blue', 'Purple', 'Brown', 'Black'], required: true },
     ageClass: { type: String, required: true },
     weightClass: { type: String, required: true },
-    athleteIds: [{ type: Schema.Types.ObjectId, ref: 'Athlete' }]
+    athleteIds: [{ type: Schema.Types.ObjectId, ref: 'Athlete' }],
+    durationSeconds: { type: Number }
 }, { timestamps: true });
 
 export default mongoose.model<ICategory>('Category', CategorySchema);

@@ -12,31 +12,35 @@ interface MatchScore {
 }
 interface Match {
     _id: string;
-    athlete1Id: { name: string; academy: string };
-    athlete2Id: { name: string; academy: string };
+    athlete1Id: { name: string; academy: string; _id?: string };
+    athlete2Id: { name: string; academy: string; _id?: string };
     score: MatchScore;
     status: string;
     eventLog: any[];
+    tournamentId: {
+        ruleSetId: {
+            name: string;
+            durationSeconds: number;
+        }
+    }
 }
 
 const socket = io(SOCKET_URL, { path: '/torneobjj/socket.io' });
 
 // ─── ScoreCard ────────────────────────────────────────────────────────────────
-// Layout is 100% vh-driven so it NEVER scrolls regardless of device.
-// Parent gives it `style={{ height: 'calc(100vh - NAV_HEIGHT)' }}`.
 const ScoreCard = ({
-    name, academy, score, isP1, sendEvent,
+    name, academy, score, isP1, sendEvent, isSubOnly
 }: {
     name: string; academy: string; score: MatchScore;
     isP1: boolean;
     sendEvent: (type: string, side: string, pts?: number) => void;
+    isSubOnly: boolean;
 }) => {
     const side   = isP1 ? 'p1' : 'p2';
     const points = isP1 ? score.p1    : score.p2;
     const adv    = isP1 ? score.p1Adv : score.p2Adv;
     const pen    = isP1 ? score.p1Pen : score.p2Pen;
 
-    // ── mini counter widget ──────────────────────────────────────────────
     const Counter = ({
         value, color, onAdd, onSub, label,
     }: { value: number; color: string; label: string;
@@ -71,13 +75,11 @@ const ScoreCard = ({
     );
 
     return (
-        // flex-col; every section gets a fixed fraction of the parent height
         <div className={clsx(
             'flex-1 flex flex-col overflow-hidden',
             isP1 ? 'bg-slate-950' : 'bg-slate-900'
         )}>
-
-            {/* ── Name / academy ── 12% height */}
+            {/* Name / academy */}
             <div className="flex flex-col items-center justify-center text-center px-2"
                  style={{ height: '12%' }}>
                 <h2 className="font-black uppercase tracking-tight text-white leading-none truncate w-full"
@@ -90,16 +92,23 @@ const ScoreCard = ({
                 </p>
             </div>
 
-            {/* ── Score number ── 36% */}
+            {/* Score number */}
             <div className="flex items-center justify-center" style={{ height: '36%' }}>
-                <span className="font-black leading-none text-yellow-500 select-none"
-                      style={{ fontSize: 'clamp(4rem, 18vw, 28vh)' }}>
-                    {points}
-                </span>
+                {!isSubOnly ? (
+                    <span className="font-black leading-none text-yellow-500 select-none"
+                        style={{ fontSize: 'clamp(4rem, 18vw, 28vh)' }}>
+                        {points}
+                    </span>
+                ) : (
+                    <div className="flex flex-col items-center gap-2 opacity-20">
+                        <div className="w-16 h-16 border-4 border-slate-700 rounded-full border-t-transparent animate-spin" />
+                        <span className="text-xs font-bold text-slate-500 tracking-[0.3em]">SUB ONLY</span>
+                    </div>
+                )}
             </div>
 
-            {/* ── ADV / PEN ── 18% */}
-            <div className="flex items-center justify-center gap-[8vw] px-4"
+            {/* ADV / PEN */}
+            <div className={clsx("flex items-center justify-center gap-[8vw] px-4", isSubOnly && "opacity-0 pointer-events-none")}
                  style={{ height: '18%' }}>
                 <Counter label="ADV" value={adv} color="text-emerald-500"
                     onAdd={() => sendEvent('advantage',     side)}
@@ -109,9 +118,8 @@ const ScoreCard = ({
                     onSub={() => sendEvent('sub_penalty', side)} />
             </div>
 
-            {/* ── Point buttons ── 34% */}
-            <div className="flex flex-col gap-[1vh] px-2 pb-2" style={{ height: '34%' }}>
-                {/* +2 / +3 / +4 — big row */}
+            {/* Point buttons */}
+            <div className={clsx("flex flex-col gap-[1vh] px-2 pb-2 transition-all", isSubOnly ? "opacity-0 pointer-events-none translate-y-10" : "opacity-100")} style={{ height: '34%' }}>
                 <div className="grid grid-cols-3 gap-[1vw] flex-1" style={{ flex: '2 1 0' }}>
                     {[
                         { pts: 2, cls: 'bg-blue-600   hover:bg-blue-500   shadow-blue-700/40'   },
@@ -129,8 +137,6 @@ const ScoreCard = ({
                         </button>
                     ))}
                 </div>
-
-                {/* -2 / -3 / -4 — slim row */}
                 <div className="grid grid-cols-3 gap-[1vw]" style={{ flex: '1 1 0' }}>
                     {[2, 3, 4].map(pts => (
                         <button key={pts}
@@ -157,22 +163,27 @@ const EndMatchModal = ({ match, t, onClose, onConfirm }: {
 
     const p1 = match.athlete1Id || { name: 'P1', academy: '' };
     const p2 = match.athlete2Id || { name: 'P2', academy: '' };
+    const isSubOnly = match.tournamentId?.ruleSetId?.name === 'Submission Only';
 
     const methods = [
-        { value: 'Points',           label: t('modal.points')     },
         { value: 'Submission',       label: t('modal.submission') },
+        { value: 'Points',           label: t('modal.points'), disabled: isSubOnly },
         { value: 'Referee Decision', label: t('modal.decision')   },
         { value: 'Disqualification', label: t('modal.dq')         },
         { value: 'Walkover',         label: t('modal.walkover')   },
-        { value: 'Advantage',        label: t('modal.advantage')  },
+        { value: 'Advantage',        label: t('modal.advantage'), disabled: isSubOnly },
     ];
 
     useEffect(() => {
+        if (isSubOnly) {
+            setMethod('Submission');
+            return;
+        }
         const s = match.score;
         if (s.p1 > s.p2 || s.p1Adv > s.p2Adv || s.p1Pen < s.p2Pen)
-            setSelectedWinner((match.athlete1Id as any)?._id);
+            setSelectedWinner(match.athlete1Id?._id || null);
         else if (s.p2 > s.p1 || s.p2Adv > s.p1Adv || s.p2Pen < s.p1Pen)
-            setSelectedWinner((match.athlete2Id as any)?._id);
+            setSelectedWinner(match.athlete2Id?._id || null);
     }, []);
 
     return (
@@ -182,12 +193,11 @@ const EndMatchModal = ({ match, t, onClose, onConfirm }: {
                     {t('modal.finalize')}
                 </h2>
 
-                {/* Winner */}
                 <div className="flex flex-col gap-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('modal.selectWinner')}</label>
                     <div className="grid grid-cols-2 gap-3">
-                        {[{ a: p1, id: (match.athlete1Id as any)?._id }, { a: p2, id: (match.athlete2Id as any)?._id }].map(({ a, id }) => (
-                            <button key={id} onClick={() => setSelectedWinner(id)}
+                        {[{ a: p1, id: match.athlete1Id?._id }, { a: p2, id: match.athlete2Id?._id }].map(({ a, id }) => (
+                            <button key={id} onClick={() => setSelectedWinner(id || null)}
                                 className={clsx(
                                     'p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-1',
                                     selectedWinner === id
@@ -201,17 +211,21 @@ const EndMatchModal = ({ match, t, onClose, onConfirm }: {
                     </div>
                 </div>
 
-                {/* Method */}
                 <div className="flex flex-col gap-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('modal.method')}</label>
                     <div className="grid grid-cols-3 gap-2">
                         {methods.map(m => (
-                            <button key={m.value} onClick={() => setMethod(m.value)}
+                            <button 
+                                key={m.value} 
+                                onClick={() => !m.disabled && setMethod(m.value)}
+                                disabled={m.disabled}
                                 className={clsx(
                                     'px-2 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all',
                                     method === m.value
                                         ? 'bg-emerald-600 text-white scale-105'
-                                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+                                        : m.disabled 
+                                            ? 'bg-slate-800/50 text-slate-700 cursor-not-allowed'
+                                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
                                 )}>
                                 {m.label}
                             </button>
@@ -219,7 +233,6 @@ const EndMatchModal = ({ match, t, onClose, onConfirm }: {
                     </div>
                 </div>
 
-                {/* Actions */}
                 <div className="flex gap-3">
                     <button onClick={onClose}
                         className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold uppercase tracking-widest rounded-xl transition text-sm">
@@ -240,8 +253,6 @@ const EndMatchModal = ({ match, t, onClose, onConfirm }: {
     );
 };
 
-// ─── Main page ────────────────────────────────────────────────────────────────
-// Uses `fixed inset-0 z-50` to ESCAPE the app navbar and own the full viewport.
 const ControlTable = () => {
     const { id }   = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -252,7 +263,6 @@ const ControlTable = () => {
     const [running, setRunning]     = useState(false);
     const [showModal, setShowModal] = useState(false);
 
-    // Lock viewport zoom on mobile
     useEffect(() => {
         const el = document.createElement('meta');
         el.name = 'viewport';
@@ -263,7 +273,16 @@ const ControlTable = () => {
 
     useEffect(() => {
         if (!id) return;
-        getMatch(id).then(setMatch);
+        getMatch(id).then(m => {
+            setMatch(m);
+            const catDuration = (m.categoryId as any)?.durationSeconds;
+            const ruleDuration = m.tournamentId?.ruleSetId?.durationSeconds;
+            if (catDuration) {
+                setTimer(catDuration);
+            } else if (ruleDuration) {
+                setTimer(ruleDuration);
+            }
+        });
         socket.emit('join_match', id);
         socket.on('match_update', setMatch);
         return () => { socket.off('match_update'); };
@@ -314,73 +333,41 @@ const ControlTable = () => {
 
     const p1 = match.athlete1Id || { name: 'P1', academy: '' };
     const p2 = match.athlete2Id || { name: 'P2', academy: '' };
-
-    // ── The nav bar height in vh ─────────────────────────────────────────
-    // 10vh ensures the bar is big enough on desktop/tablet but compact on mobile.
+    const isSubOnly = match.tournamentId?.ruleSetId?.name === 'Submission Only';
     const NAV_VH = 10;
 
     return (
-        // fixed inset-0 → covers the app navbar, no scroll possible
         <div className="fixed inset-0 z-50 bg-black flex flex-col overflow-hidden font-sans">
-
             {showModal && (
                 <EndMatchModal match={match} t={t}
                     onClose={() => setShowModal(false)}
                     onConfirm={endMatch} />
             )}
 
-            {/* ── Top bar ── always NAV_VH of the screen ─────────────── */}
-            <div
-                className="shrink-0 flex items-center bg-slate-900 border-b border-white/5 z-10 px-3 sm:px-6 md:px-10"
-                style={{ height: `${NAV_VH}vh` }}
-            >
-                {/* Back */}
+            <div className="shrink-0 flex items-center bg-slate-900 border-b border-white/5 z-10 px-3 sm:px-6 md:px-10" style={{ height: `${NAV_VH}vh` }}>
                 <div className="flex-1">
-                    <button onClick={() => navigate(-1)}
-                        className="group flex items-center gap-1 sm:gap-2 text-slate-400 hover:text-white transition font-bold uppercase tracking-widest"
-                        style={{ fontSize: 'clamp(0.7rem, 1.6vh, 1.1rem)' }}>
+                    <button onClick={() => navigate(-1)} className="group flex items-center gap-1 sm:gap-2 text-slate-400 hover:text-white transition font-bold uppercase tracking-widest" style={{ fontSize: 'clamp(0.7rem, 1.6vh, 1.1rem)' }}>
                         <span className="transition group-hover:-translate-x-1">←</span>
                         <span className="hidden sm:inline">{t('scoreboard.back')}</span>
                     </button>
                 </div>
-
-                {/* Timer */}
                 <div className="flex-1 flex justify-center">
-                    <div onClick={toggleTimer}
-                        className={clsx(
-                            'font-mono font-black cursor-pointer select-none rounded-xl transition-all duration-300 flex items-center justify-center',
-                            running
-                                ? 'bg-slate-950 text-white border border-white/5'
-                                : 'bg-yellow-500 text-black shadow-[0_0_24px_rgba(234,179,8,0.35)] animate-pulse'
-                        )}
-                        style={{
-                            fontSize:      'clamp(1.6rem, 5vh, 4rem)',
-                            padding:       'clamp(2px, 0.6vh, 10px) clamp(10px, 3vw, 48px)',
-                            borderRadius:  'clamp(8px, 1.2vh, 16px)',
-                        }}>
+                    <div onClick={toggleTimer} className={clsx('font-mono font-black cursor-pointer select-none rounded-xl transition-all duration-300 flex items-center justify-center', running ? 'bg-slate-950 text-white border border-white/5' : 'bg-yellow-500 text-black shadow-[0_0_24px_rgba(234,179,8,0.35)] animate-pulse')} style={{ fontSize: 'clamp(1.6rem, 5vh, 4rem)', padding: 'clamp(2px, 0.6vh, 10px) clamp(10px, 3vw, 48px)', borderRadius: 'clamp(8px, 1.2vh, 16px)' }}>
                         {fmt(timer)}
                     </div>
                 </div>
-
-                {/* Finalize */}
                 <div className="flex-1 flex justify-end">
-                    <button onClick={() => setShowModal(true)}
-                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest transition active:scale-95 rounded-lg sm:rounded-xl shadow-[0_0_16px_rgba(16,185,129,0.25)]"
-                        style={{
-                            fontSize: 'clamp(0.65rem, 1.5vh, 1rem)',
-                            padding:  'clamp(4px, 1vh, 14px) clamp(8px, 2vw, 32px)',
-                        }}>
+                    <button onClick={() => setShowModal(true)} className="bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest transition active:scale-95 rounded-lg sm:rounded-xl shadow-[0_0_16px_rgba(16,185,129,0.25)]" style={{ fontSize: 'clamp(0.65rem, 1.5vh, 1rem)', padding: 'clamp(4px, 1vh, 14px) clamp(8px, 2vw, 32px)' }}>
                         <span className="sm:hidden">FIN</span>
                         <span className="hidden sm:inline">{t('scoreboard.endMatch')}</span>
                     </button>
                 </div>
             </div>
 
-            {/* ── Scoreboards ── fill the remaining (100 - NAV_VH)vh ──── */}
             <div className="flex flex-1 overflow-hidden" style={{ height: `${100 - NAV_VH}vh` }}>
-                <ScoreCard name={p1.name} academy={p1.academy} score={match.score} isP1={true}  sendEvent={sendEvent} />
+                <ScoreCard name={p1.name} academy={p1.academy} score={match.score} isP1={true}  sendEvent={sendEvent} isSubOnly={isSubOnly} />
                 <div className="w-px bg-white/5 shrink-0" />
-                <ScoreCard name={p2.name} academy={p2.academy} score={match.score} isP1={false} sendEvent={sendEvent} />
+                <ScoreCard name={p2.name} academy={p2.academy} score={match.score} isP1={false} sendEvent={sendEvent} isSubOnly={isSubOnly} />
             </div>
         </div>
     );

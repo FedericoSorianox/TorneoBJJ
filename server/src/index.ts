@@ -12,6 +12,7 @@ import tournamentRoutes from './routes/tournamentRoutes';
 import matchRoutes from './routes/matchRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import authRoutes from './routes/authRoutes';
+import ruleSetRoutes from './routes/ruleSetRoutes';
 import { registerMatchHandlers } from './handlers/matchHandler';
 import { seedAdmin } from './utils/seedAdmin';
 
@@ -64,6 +65,7 @@ apiRouter.use('/tournaments', tournamentRoutes);
 apiRouter.use('/matches', matchRoutes);
 apiRouter.use('/categories', categoryRoutes);
 apiRouter.use('/auth', authRoutes);
+apiRouter.use('/rulesets', ruleSetRoutes);
 
 apiRouter.get('/leaderboard', (req, res) => {
     res.redirect('/athletes/leaderboard');

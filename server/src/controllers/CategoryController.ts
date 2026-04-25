@@ -237,6 +237,24 @@ export const finalizeCategory = async (req: Request, res: Response) => {
     }
 };
 
+export const removeAthleteFromCategory = async (req: Request, res: Response) => {
+    try {
+        const { athleteId } = req.params;
+        const category = await Category.findById(req.params.id);
+        if (!category) return res.status(404).json({ error: 'Category not found' });
+
+        // @ts-ignore
+        if (category.athleteIds) {
+            // @ts-ignore
+            category.athleteIds = category.athleteIds.filter(id => id.toString() !== athleteId);
+            await category.save();
+        }
+        res.json(category);
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
+    }
+};
+
 export const deleteCategory = async (req: Request, res: Response) => {
     try {
         const category = await Category.findByIdAndDelete(req.params.id);
@@ -249,6 +267,20 @@ export const deleteCategory = async (req: Request, res: Response) => {
         await Bracket.deleteMany({ categoryId: req.params.id });
 
         res.json({ message: 'Category deleted' });
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
+    }
+};
+export const updateCategoryDuration = async (req: Request, res: Response) => {
+    try {
+        const { durationSeconds } = req.body;
+        const category = await Category.findByIdAndUpdate(
+            req.params.id, 
+            { durationSeconds }, 
+            { new: true }
+        );
+        if (!category) return res.status(404).json({ error: 'Category not found' });
+        res.json(category);
     } catch (error) {
         res.status(500).json({ error: (error as Error).message });
     }

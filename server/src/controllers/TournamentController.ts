@@ -10,18 +10,12 @@ export const createTournament = async (req: Request, res: Response) => {
         let { ruleSetId, ...data } = req.body;
 
         if (!ruleSetId) {
-            // Look for "IBJJF Standard" or create
-            let defaultRules = await RuleSet.findOne({ name: 'IBJJF Standard' });
-            if (!defaultRules) {
-                defaultRules = await RuleSet.create({
-                    name: 'IBJJF Standard',
-                    durationSeconds: 300,
-                    points: {
-                        takedown: 2, sweep: 2, kneeOnBelly: 2, guardPass: 3, mount: 4, backTake: 4, advantage: 0, penalty: 0
-                    }
-                });
+            let ibjjf = await RuleSet.findOne({ name: 'IBJJF Standard' });
+            if (!ibjjf) {
+                // Fallback in case getRuleSets was never called
+                ibjjf = await RuleSet.create({ name: 'IBJJF Standard', durationSeconds: 300, points: { takedown: 2, sweep: 2, kneeOnBelly: 2, guardPass: 3, mount: 4, backTake: 4, advantage: 0, penalty: 0 } });
             }
-            ruleSetId = defaultRules._id;
+            ruleSetId = ibjjf._id;
         }
 
         const tournament = new Tournament({ ...data, ruleSetId });

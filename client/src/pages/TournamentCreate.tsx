@@ -1,25 +1,44 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createTournament } from '../api';
+import { createTournament, getRuleSets } from '../api';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
+import clsx from 'clsx';
 
 const TournamentCreate = () => {
     const navigate = useNavigate();
     const { t } = useLanguage();
+    const [ruleSets, setRuleSets] = useState<any[]>([]);
+    const [loadingRules, setLoadingRules] = useState(true);
     const [form, setForm] = useState({
         name: '',
         date: '',
         location: '',
         defaultElimination: 'SingleElimination',
-        type: 'Standard',
+        ruleSetId: '',
+        type: 'Standard' as 'Standard' | 'Custom',
         customRules: ''
     });
+
+    useEffect(() => {
+        getRuleSets().then(sets => {
+            setRuleSets(sets);
+            if (sets.length > 0) {
+                const standard = sets.find((s: any) => s.name.includes('Standard')) || sets[0];
+                setForm(prev => ({ ...prev, ruleSetId: standard._id }));
+            }
+            setLoadingRules(false);
+        }).catch(err => {
+            console.error(err);
+            setLoadingRules(false);
+        });
+    }, []);
 
     const validateForm = () => {
         const errors: string[] = [];
         if (!form.name.trim()) errors.push(t('common.error'));
         if (!form.date) errors.push(t('common.error'));
+        if (!form.ruleSetId) errors.push("Please select a ruleset");
         return errors;
     };
 
@@ -86,7 +105,7 @@ const TournamentCreate = () => {
                                 onChange={e => setForm({ ...form, defaultElimination: e.target.value })}
                             >
                                 <option value="SingleElimination">Single Elimination</option>
-                                <option value="DoubleElimination" disabled>Double Elimination (WIP)</option>
+                                <option value="DoubleElimination">Double Elimination</option>
                                 <option value="RoundRobin" disabled>Round Robin (WIP)</option>
                             </select>
                         </div>
@@ -104,49 +123,39 @@ const TournamentCreate = () => {
                     </div>
 
                     <div className="pt-4 border-t border-slate-700">
-                        <label className="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Tournament Type</label>
-                        <div className="flex gap-4 mb-4">
-                            <label className={`flex-1 p-4 rounded-xl border cursor-pointer transition-all ${form.type === 'Standard' ? 'bg-blue-600/20 border-blue-500' : 'bg-slate-900/50 border-slate-700 hover:border-slate-500'}`}>
-                                <input
-                                    type="radio"
-                                    name="type"
-                                    value="Standard"
-                                    checked={form.type === 'Standard'}
-                                    onChange={e => setForm({ ...form, type: e.target.value as 'Standard' | 'Custom' })}
-                                    className="hidden"
-                                />
-                                <div className="font-bold text-lg mb-1">Standard</div>
-                                <div className="text-xs text-slate-400">Regular IBJJF Rules</div>
-                            </label>
-                            <label className={`flex-1 p-4 rounded-xl border cursor-pointer transition-all ${form.type === 'Custom' ? 'bg-purple-600/20 border-purple-500' : 'bg-slate-900/50 border-slate-700 hover:border-slate-500'}`}>
-                                <input
-                                    type="radio"
-                                    name="type"
-                                    value="Custom"
-                                    checked={form.type === 'Custom'}
-                                    onChange={e => setForm({ ...form, type: e.target.value as 'Standard' | 'Custom' })}
-                                    className="hidden"
-                                />
-                                <div className="font-bold text-lg mb-1">Random / Custom</div>
-                                <div className="text-xs text-slate-400">Custom Rules & Format</div>
-                            </label>
+                        <label className="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Reglamento (RuleSet)</label>
+                        <div className="grid grid-cols-1 gap-3">
+                            {loadingRules ? (
+                                <div className="text-slate-500 text-sm animate-pulse">Cargando reglamentos...</div>
+                            ) : (
+                                ruleSets.map(rs => (
+                                    <div 
+                                        key={rs._id}
+                                        onClick={() => setForm({ ...form, ruleSetId: rs._id, type: rs.name === 'Submission Only' ? 'Custom' : 'Standard' })}
+                                        className={clsx(
+                                            "p-4 rounded-xl border cursor-pointer transition-all flex justify-between items-center",
+                                            form.ruleSetId === rs._id 
+                                                ? "bg-blue-600/20 border-blue-500 shadow-lg shadow-blue-900/20" 
+                                                : "bg-slate-900/50 border-slate-700 hover:border-slate-500"
+                                        )}
+                                    >
+                                        <div>
+                                            <div className="font-bold text-white">{rs.name}</div>
+                                            <div className="text-[10px] text-slate-400 uppercase tracking-widest">
+                                                {rs.durationSeconds / 60} MIN • {rs.name === 'Submission Only' ? 'NO POINTS' : 'POINTS ENABLED'}
+                                            </div>
+                                        </div>
+                                        {form.ruleSetId === rs._id && (
+                                            <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-[10px]">✓</div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
                         </div>
-
-                        {form.type === 'Custom' && (
-                            <div className="animate-fadeIn">
-                                <label className="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Custom Rules Description</label>
-                                <textarea
-                                    className="w-full p-4 bg-slate-900/50 rounded-xl border border-slate-700 focus:border-purple-500 outline-none transition-all h-32"
-                                    placeholder="Describe the custom rules for this event..."
-                                    value={form.customRules}
-                                    onChange={e => setForm({ ...form, customRules: e.target.value })}
-                                />
-                            </div>
-                        )}
                     </div>
                 </div>
 
-                <button className="w-full py-4 bg-blue-600 hover:bg-blue-50 p-2 rounded-xl font-bold text-lg mt-4 shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all hover:bg-blue-500">
+                <button className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-xl font-bold text-lg mt-4 shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all">
                     {t('tournament.form.createBtn')}
                 </button>
             </form>
