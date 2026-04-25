@@ -38,7 +38,7 @@ const TournamentDetail = () => {
             setCategories(cats);
             setAthletes(aths);
         } catch (err) {
-            console.error(err);
+            console.error("Load Data Error:", err);
         } finally {
             setLoading(false);
         }
@@ -91,19 +91,19 @@ const TournamentDetail = () => {
         }
     };
 
-    if (loading) return <div className="text-3xl text-center p-20 font-black animate-pulse">Loading...</div>;
+    if (loading) return <div className="text-3xl text-center p-20 font-black animate-pulse text-white">Cargando...</div>;
 
     const durations = [3, 5, 6, 7];
 
     return (
-        <div className="p-8 h-full flex flex-col bg-[#0f172a] text-slate-100">
-            <button onClick={() => navigate(-1)} className="text-slate-400 hover:text-white mb-6 w-fit flex items-center gap-2 font-bold uppercase tracking-widest text-xs">
-                &larr; Back
+        <div className="p-8 h-full flex flex-col bg-[#0f172a] text-slate-100 overflow-y-auto custom-scrollbar">
+            <button onClick={() => navigate(-1)} className="text-slate-400 hover:text-white mb-6 w-fit flex items-center gap-2 font-bold uppercase tracking-widest text-xs transition-colors">
+                &larr; {t('common.back')}
             </button>
             
-            <div className="flex justify-between items-start mb-10">
+            <div className="flex flex-col lg:flex-row justify-between items-start mb-10 gap-6">
                 <div className="space-y-1">
-                    <h1 className="text-5xl font-black italic tracking-tighter text-white uppercase">{tournament?.name || t('detail.title')}</h1>
+                    <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter text-white uppercase leading-tight">{tournament?.name || t('detail.title')}</h1>
                     {tournament && (
                         <div className="flex flex-col gap-2">
                             <p className="text-slate-400 font-mono text-sm">
@@ -129,7 +129,7 @@ const TournamentDetail = () => {
                     )}
                 </div>
                 {user?.role === 'admin' && (
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 shrink-0">
                         <Link to={`/tournaments/${id}/edit`} className="bg-slate-800 text-slate-300 border border-slate-700 px-6 py-3 rounded-xl font-bold hover:bg-slate-700 transition-all shadow-lg text-sm">
                             {t('detail.edit')}
                         </Link>
@@ -178,23 +178,21 @@ const TournamentDetail = () => {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 overflow-auto pb-20 pr-2 custom-scrollbar">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-20 pr-2">
                 {categories.map(cat => (
-                    <div key={cat._id} className="group bg-slate-800/40 hover:bg-slate-800/60 p-8 rounded-3xl border border-slate-700/50 hover:border-slate-600/50 transition-all duration-300 flex flex-col shadow-2xl relative overflow-hidden">
-                        {/* Background subtle indicator */}
+                    <div key={cat._id} className="group bg-slate-800/40 hover:bg-slate-800/60 p-8 rounded-3xl border border-slate-700/50 hover:border-slate-600/50 transition-all duration-300 flex flex-col shadow-2xl relative overflow-hidden min-h-[450px]">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 blur-[80px] -z-10 group-hover:bg-blue-600/10 transition-all"></div>
                         
-                        <div className="flex justify-between items-start mb-6">
-                            <div>
-                                <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-1">{cat.name}</h3>
+                        <div className="flex justify-between items-start mb-6 gap-4">
+                            <div className="min-w-0">
+                                <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-1 truncate">{cat.name}</h3>
                                 <div className="flex gap-2 items-center">
                                     <span className="text-slate-500 font-mono text-[10px] uppercase tracking-widest">{cat.gender} • {cat.belt} • {cat.weightClass}</span>
                                 </div>
                             </div>
                             
-                            {/* Duration Buttons */}
                             {user?.role === 'admin' && (
-                                <div className="flex flex-col items-end gap-2">
+                                <div className="flex flex-col items-end gap-2 shrink-0">
                                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Match Duration</span>
                                     <div className="flex gap-1 bg-black/20 p-1 rounded-xl border border-slate-700/30">
                                         {durations.map(min => (
@@ -216,24 +214,25 @@ const TournamentDetail = () => {
                             )}
                         </div>
 
-                        <div className="flex-1 flex flex-col min-h-0 mb-8">
+                        <div className="flex flex-col flex-1 mb-6">
                             <h4 className="font-bold mb-4 text-xs text-slate-400 flex justify-between items-center uppercase tracking-widest">
                                 {t('detail.athletes')} 
                                 <span className="bg-slate-900/80 px-3 py-1 rounded-full text-[10px] text-blue-400 border border-blue-500/20">{cat.athleteIds?.length || 0} Atletas</span>
                             </h4>
                             
-                            <div className="flex-1 bg-slate-900/30 rounded-2xl border border-slate-700/30 overflow-hidden flex flex-col">
-                                <ul className="flex-1 overflow-y-auto p-4 space-y-2 max-h-56 scrollbar-thin scrollbar-thumb-slate-700">
+                            <div className="bg-slate-900/30 rounded-2xl border border-slate-700/30 overflow-hidden flex flex-col min-h-[180px] max-h-[250px]">
+                                <ul className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-thin scrollbar-thumb-slate-700">
                                     {(cat.athleteIds || []).length > 0 ? (
-                                        (cat.athleteIds || []).map((aid: string) => {
-                                            const a = athletes.find(x => x._id === aid);
+                                        (cat.athleteIds || []).map((aid: any) => {
+                                            const athleteId = typeof aid === 'string' ? aid : aid._id || aid;
+                                            const a = athletes.find(x => x._id === athleteId);
                                             return (
-                                                <li key={aid} className="group/item flex items-center justify-between text-sm bg-slate-800/30 hover:bg-slate-800/80 px-4 py-3 rounded-xl border border-slate-700/20 hover:border-slate-600/50 transition-all">
-                                                    <span className="text-slate-300 font-medium">{a?.name || aid}</span>
+                                                <li key={athleteId} className="group/item flex items-center justify-between text-sm bg-slate-800/30 hover:bg-slate-800/80 px-4 py-3 rounded-xl border border-slate-700/20 hover:border-slate-600/50 transition-all">
+                                                    <span className="text-slate-300 font-medium truncate pr-2">{a?.name || (typeof aid === 'string' ? aid : aid.name || 'Atleta desconocido')}</span>
                                                     {user?.role === 'admin' && (
                                                         <button 
-                                                            onClick={() => handleRemoveAthlete(cat._id, aid)}
-                                                            className="text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover/item:opacity-100 p-1"
+                                                            onClick={() => handleRemoveAthlete(cat._id, athleteId)}
+                                                            className="text-slate-600 hover:text-red-400 transition-colors opacity-100 lg:opacity-0 lg:group-hover/item:opacity-100 p-1 shrink-0"
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
@@ -261,7 +260,7 @@ const TournamentDetail = () => {
                                         >
                                             <option value="" disabled>{t('category.form.addAthlete')}</option>
                                             {athletes
-                                                .filter(a => !(cat.athleteIds || []).includes(a._id))
+                                                .filter(a => !(cat.athleteIds || []).some((aid: any) => (typeof aid === 'string' ? aid : aid._id) === a._id))
                                                 .sort((a, b) => a.name.localeCompare(b.name))
                                                 .map(a => (
                                                     <option key={a._id} value={a._id}>{a.name}</option>
@@ -273,13 +272,13 @@ const TournamentDetail = () => {
                             </div>
                         </div>
 
-                        <div className="flex gap-3 pt-6 border-t border-slate-700/50">
+                        <div className="flex gap-3 pt-6 border-t border-slate-700/50 mt-auto">
                             {user?.role === 'admin' && (
-                                <button onClick={() => handleGenerate(cat._id)} className="flex-[2] bg-purple-600 hover:bg-purple-500 text-white text-xs py-4 rounded-2xl font-black uppercase tracking-widest transition-all shadow-lg shadow-purple-900/20">
+                                <button onClick={() => handleGenerate(cat._id)} className="flex-[2] bg-purple-600 hover:bg-purple-500 text-white text-[10px] py-4 rounded-2xl font-black uppercase tracking-widest transition-all shadow-lg shadow-purple-900/20 truncate px-2">
                                     {t('detail.generateBracket')}
                                 </button>
                             )}
-                            <Link to={`/bracket/${cat._id}`} className="flex-[2] bg-slate-700 hover:bg-slate-600 text-white text-center text-xs py-4 rounded-2xl font-black uppercase tracking-widest transition-all">
+                            <Link to={`/bracket/${cat._id}`} className="flex-[2] bg-slate-700 hover:bg-slate-600 text-white text-center text-[10px] py-4 rounded-2xl font-black uppercase tracking-widest transition-all flex items-center justify-center truncate px-2">
                                 {t('detail.viewBracket')}
                             </Link>
                             {user?.role === 'admin' && (
