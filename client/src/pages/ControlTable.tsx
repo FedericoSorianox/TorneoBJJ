@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import io from 'socket.io-client';
-import { getMatch, SOCKET_URL } from '../api';
+import { getMatch, SOCKET_URL, SOCKET_CONNECTION_URL } from '../api';
 import clsx from 'clsx';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -25,7 +25,7 @@ interface Match {
     }
 }
 
-const socket = io(SOCKET_URL, { path: '/torneobjj/socket.io' });
+// Socket is now managed inside the component
 
 // ─── ScoreCard ────────────────────────────────────────────────────────────────
 const ScoreCard = ({
@@ -75,77 +75,86 @@ const ScoreCard = ({
     );
 
     return (
-        <div className={clsx(
-            'flex-1 flex flex-col overflow-hidden',
-            isP1 ? 'bg-slate-950' : 'bg-slate-900'
-        )}>
-            {/* Name / academy */}
-            <div className="flex flex-col items-center justify-center text-center px-2"
-                 style={{ height: '12%' }}>
-                <h2 className="font-black uppercase tracking-tight text-white leading-none truncate w-full"
-                    style={{ fontSize: 'clamp(1rem, 3.5vw, 3rem)' }}>
-                    {name}
-                </h2>
-                <p className="font-semibold text-slate-400 uppercase tracking-widest"
-                   style={{ fontSize: 'clamp(0.55rem, 1.2vw, 1rem)' }}>
-                    {academy}
-                </p>
-            </div>
-
-            {/* Score number */}
-            <div className="flex items-center justify-center" style={{ height: '36%' }}>
-                {!isSubOnly ? (
-                    <span className="font-black leading-none text-yellow-500 select-none"
-                        style={{ fontSize: 'clamp(4rem, 18vw, 28vh)' }}>
-                        {points}
-                    </span>
-                ) : (
-                    <div className="flex flex-col items-center gap-2 opacity-20">
-                        <div className="w-16 h-16 border-4 border-slate-700 rounded-full border-t-transparent animate-spin" />
-                        <span className="text-xs font-bold text-slate-500 tracking-[0.3em]">SUB ONLY</span>
-                    </div>
-                )}
-            </div>
-
-            {/* ADV / PEN */}
-            <div className={clsx("flex items-center justify-center gap-[8vw] px-4", isSubOnly && "opacity-0 pointer-events-none")}
-                 style={{ height: '18%' }}>
-                <Counter label="ADV" value={adv} color="text-emerald-500"
-                    onAdd={() => sendEvent('advantage',     side)}
-                    onSub={() => sendEvent('sub_advantage', side)} />
-                <Counter label="PEN" value={pen} color="text-rose-500"
-                    onAdd={() => sendEvent('penalty',     side)}
-                    onSub={() => sendEvent('sub_penalty', side)} />
-            </div>
-
-            {/* Point buttons */}
-            <div className={clsx("flex flex-col gap-[1vh] px-2 pb-2 transition-all", isSubOnly ? "opacity-0 pointer-events-none translate-y-10" : "opacity-100")} style={{ height: '34%' }}>
-                <div className="grid grid-cols-3 gap-[1vw] flex-1" style={{ flex: '2 1 0' }}>
-                    {[
-                        { pts: 2, cls: 'bg-blue-600   hover:bg-blue-500   shadow-blue-700/40'   },
-                        { pts: 3, cls: 'bg-purple-600 hover:bg-purple-500 shadow-purple-700/40' },
-                        { pts: 4, cls: 'bg-orange-600 hover:bg-orange-500 shadow-orange-700/40' },
-                    ].map(({ pts, cls }) => (
-                        <button key={pts}
-                            onClick={() => sendEvent('points', side, pts)}
-                            className={clsx(
-                                'w-full h-full rounded-xl font-black text-white shadow-lg transition active:scale-95 flex items-center justify-center',
-                                cls
-                            )}
-                            style={{ fontSize: 'clamp(1rem, 3.5vw, 2rem)' }}>
-                            +{pts}
-                        </button>
-                    ))}
+        <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Top Part: Name and Main Score (Colored) */}
+            <div className={clsx(
+                "flex flex-col transition-colors duration-500",
+                isP1 ? 'bg-slate-100 text-slate-950' : 'bg-blue-700 text-white shadow-[inset_0_0_100px_rgba(0,0,0,0.2)]'
+            )} style={{ height: '48%' }}>
+                {/* Name / academy */}
+                <div className="flex flex-col items-center justify-center text-center px-2 border-b border-black/5"
+                     style={{ height: '25%' }}>
+                    <h2 className={clsx("font-black uppercase tracking-tight leading-none truncate w-full", isP1 ? "text-slate-900" : "text-white")}
+                        style={{ fontSize: 'clamp(1rem, 3.5vw, 3rem)' }}>
+                        {name}
+                    </h2>
+                    <p className={clsx("font-semibold uppercase tracking-widest", isP1 ? "text-slate-500" : "text-blue-200")}
+                       style={{ fontSize: 'clamp(0.55rem, 1.2vw, 1rem)' }}>
+                        {academy}
+                    </p>
                 </div>
-                <div className="grid grid-cols-3 gap-[1vw]" style={{ flex: '1 1 0' }}>
-                    {[2, 3, 4].map(pts => (
-                        <button key={pts}
-                            onClick={() => sendEvent('sub_points', side, pts)}
-                            className="w-full h-full rounded-lg font-black text-slate-400 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition active:scale-95 flex items-center justify-center"
-                            style={{ fontSize: 'clamp(0.75rem, 2vw, 1.25rem)' }}>
-                            -{pts}
-                        </button>
-                    ))}
+
+                {/* Score number */}
+                <div className="flex-1 flex items-center justify-center">
+                    {!isSubOnly ? (
+                        <span className="font-black leading-none select-none text-black"
+                            style={{ 
+                                fontSize: 'clamp(4rem, 18vw, 24vh)',
+                                textShadow: '2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 0 2px 0 #fff, 0 -2px 0 #fff, 2px 0 0 #fff, -2px 0 0 #fff'
+                            }}>
+                            {points}
+                        </span>
+                    ) : (
+                        <div className="flex flex-col items-center gap-2 opacity-20">
+                            <div className={clsx("w-16 h-16 border-4 rounded-full border-t-transparent animate-spin", isP1 ? "border-slate-300" : "border-blue-400")} />
+                            <span className="text-xs font-bold tracking-[0.3em]">SUB ONLY</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Bottom Part: Controls (Dark) */}
+            <div className="flex-1 flex flex-col bg-slate-950 border-t border-white/5" style={{ height: '52%' }}>
+                {/* ADV / PEN */}
+                <div className={clsx("flex items-center justify-center gap-[8vw] px-4", isSubOnly && "opacity-0 pointer-events-none")}
+                     style={{ height: '35%' }}>
+                    <Counter label="ADV" value={adv} color="text-yellow-500"
+                        onAdd={() => sendEvent('advantage',     side)}
+                        onSub={() => sendEvent('sub_advantage', side)} />
+                    <Counter label="PEN" value={pen} color="text-rose-500"
+                        onAdd={() => sendEvent('penalty',     side)}
+                        onSub={() => sendEvent('sub_penalty', side)} />
+                </div>
+
+                {/* Point buttons */}
+                <div className={clsx("flex flex-col gap-[1vh] px-4 pb-4 transition-all", isSubOnly ? "opacity-0 pointer-events-none translate-y-10" : "opacity-100")} style={{ height: '40%' }}>
+                    <div className="grid grid-cols-3 gap-[1.5vw] flex-1" style={{ flex: '1 1 0' }}>
+                        {[
+                            { pts: 2, cls: 'bg-emerald-700 hover:bg-emerald-600 border-emerald-500/30' },
+                            { pts: 3, cls: 'bg-emerald-800 hover:bg-emerald-700 border-emerald-600/30' },
+                            { pts: 4, cls: 'bg-emerald-900 hover:bg-emerald-800 border-emerald-700/30' },
+                        ].map(({ pts, cls }) => (
+                            <button key={pts}
+                                onClick={() => sendEvent('points', side, pts)}
+                                className={clsx(
+                                    'w-full h-full rounded-2xl font-black text-white transition active:scale-95 flex items-center justify-center border-2 shadow-lg shadow-emerald-950/20',
+                                    cls
+                                )}
+                                style={{ fontSize: 'clamp(1rem, 3vh, 2.5rem)' }}>
+                                +{pts}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="grid grid-cols-3 gap-[1vw]" style={{ flex: '1 1 0' }}>
+                        {[2, 3, 4].map(pts => (
+                            <button key={pts}
+                                onClick={() => sendEvent('sub_points', side, pts)}
+                                className="w-full h-full rounded-lg font-black text-slate-400 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition active:scale-95 flex items-center justify-center"
+                                style={{ fontSize: 'clamp(0.75rem, 2vw, 1.25rem)' }}>
+                                -{pts}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
@@ -258,10 +267,13 @@ const ControlTable = () => {
     const navigate = useNavigate();
     const { t }    = useLanguage();
 
-    const [match, setMatch]         = useState<Match | null>(null);
+    const [match, setMatch]         = useState<any | null>(null);
     const [timer, setTimer]         = useState(300);
     const [running, setRunning]     = useState(false);
     const [showModal, setShowModal] = useState(false);
+    
+    const socketRef = useRef<any>(null);
+    const [connected, setConnected] = useState(false);
 
     useEffect(() => {
         const el = document.createElement('meta');
@@ -273,6 +285,47 @@ const ControlTable = () => {
 
     useEffect(() => {
         if (!id) return;
+        
+        console.log('🔌 Connecting to socket at:', SOCKET_CONNECTION_URL, 'with path: /torneobjj/socket.io');
+        const socket = io(SOCKET_CONNECTION_URL, { 
+            path: '/torneobjj/socket.io',
+            reconnectionAttempts: 5,
+            timeout: 10000
+        });
+        socketRef.current = socket;
+
+        socket.on('connect', () => {
+            console.log('✅ Socket connected:', socket.id);
+            setConnected(true);
+            socket.emit('join_match', id);
+        });
+
+        socket.on('connect_error', (err) => {
+            console.error('❌ Socket connection error:', err);
+            setConnected(false);
+        });
+
+        socket.on('disconnect', (reason) => {
+            console.warn('⚠️ Socket disconnected:', reason);
+            setConnected(false);
+        });
+
+        socket.on('match_update', (updatedMatch: any) => {
+            console.log('Match updated:', updatedMatch);
+            setMatch(updatedMatch);
+        });
+
+        socket.on('timer_update', ({ action, timer: rt }: { action: string, timer: number }) => {
+            if (action === 'start')     setRunning(true);
+            else if (action === 'stop') { setRunning(false); setTimer(rt); }
+            else if (action === 'sync') setTimer(rt);
+        });
+
+        socket.on('error', (err: any) => {
+            console.error('Socket error event:', err);
+            alert(err.message || 'Error en el servidor');
+        });
+
         getMatch(id).then(m => {
             setMatch(m);
             const catDuration = (m.categoryId as any)?.durationSeconds;
@@ -283,19 +336,12 @@ const ControlTable = () => {
                 setTimer(ruleDuration);
             }
         });
-        socket.emit('join_match', id);
-        socket.on('match_update', setMatch);
-        return () => { socket.off('match_update'); };
-    }, [id]);
 
-    useEffect(() => {
-        socket.on('timer_update', ({ action, timer: rt }) => {
-            if (action === 'start')     setRunning(true);
-            else if (action === 'stop') { setRunning(false); setTimer(rt); }
-            else if (action === 'sync') setTimer(rt);
-        });
-        return () => { socket.off('timer_update'); };
-    }, []);
+        return () => {
+            socket.disconnect();
+            socketRef.current = null;
+        };
+    }, [id]);
 
     useEffect(() => {
         if (!running || timer <= 0) return;
@@ -308,17 +354,21 @@ const ControlTable = () => {
     const toggleTimer = () => {
         const next = !running;
         setRunning(next);
-        socket.emit('timer_action', { matchId: id, action: next ? 'start' : 'stop', timer });
+        if (socketRef.current) {
+            socketRef.current.emit('timer_action', { matchId: id, action: next ? 'start' : 'stop', timer });
+        }
     };
 
     const sendEvent = (type: string, athleteId: string, points?: number) => {
-        if (!id) return;
-        socket.emit('send_event', { matchId: id, event: { type, athleteId, points, timestamp: new Date() } });
+        if (!id || !socketRef.current) return;
+        console.log('Sending event:', type, athleteId, points);
+        socketRef.current.emit('send_event', { matchId: id, event: { type, athleteId, points, timestamp: new Date() } });
     };
 
     const endMatch = (winnerId: string | null, method: string) => {
-        if (!id) return;
-        socket.emit('end_match', { matchId: id, winnerId, method });
+        if (!id || !socketRef.current) return;
+        console.log('Ending match:', winnerId, method);
+        socketRef.current.emit('end_match', { matchId: id, winnerId, method });
         setShowModal(false);
         navigate(-1);
     };
@@ -334,7 +384,7 @@ const ControlTable = () => {
     const p1 = match.athlete1Id || { name: 'P1', academy: '' };
     const p2 = match.athlete2Id || { name: 'P2', academy: '' };
     const isSubOnly = match.tournamentId?.ruleSetId?.name === 'Submission Only';
-    const NAV_VH = 10;
+    const NAV_VH = 22; // Massive header for the timer
 
     return (
         <div className="fixed inset-0 z-50 bg-black flex flex-col overflow-hidden font-sans">
@@ -344,7 +394,7 @@ const ControlTable = () => {
                     onConfirm={endMatch} />
             )}
 
-            <div className="shrink-0 flex items-center bg-slate-900 border-b border-white/5 z-10 px-3 sm:px-6 md:px-10" style={{ height: `${NAV_VH}vh` }}>
+            <div className="shrink-0 flex items-center bg-slate-900 border-b border-white/10 z-10 px-3 sm:px-6 md:px-10" style={{ height: `${NAV_VH}vh` }}>
                 <div className="flex-1">
                     <button onClick={() => navigate(-1)} className="group flex items-center gap-1 sm:gap-2 text-slate-400 hover:text-white transition font-bold uppercase tracking-widest" style={{ fontSize: 'clamp(0.7rem, 1.6vh, 1.1rem)' }}>
                         <span className="transition group-hover:-translate-x-1">←</span>
@@ -352,7 +402,19 @@ const ControlTable = () => {
                     </button>
                 </div>
                 <div className="flex-1 flex justify-center">
-                    <div onClick={toggleTimer} className={clsx('font-mono font-black cursor-pointer select-none rounded-xl transition-all duration-300 flex items-center justify-center', running ? 'bg-slate-950 text-white border border-white/5' : 'bg-yellow-500 text-black shadow-[0_0_24px_rgba(234,179,8,0.35)] animate-pulse')} style={{ fontSize: 'clamp(1.6rem, 5vh, 4rem)', padding: 'clamp(2px, 0.6vh, 10px) clamp(10px, 3vw, 48px)', borderRadius: 'clamp(8px, 1.2vh, 16px)' }}>
+                    <div onClick={toggleTimer} 
+                        className={clsx(
+                            'font-mono font-black cursor-pointer select-none rounded-[2vh] transition-all duration-300 flex items-center justify-center border-2', 
+                            running 
+                                ? 'bg-slate-950 text-white border-white/20 shadow-[inset_0_0_40px_rgba(0,0,0,0.8)]' 
+                                : 'bg-yellow-500 text-black border-yellow-300 shadow-[0_0_60px_rgba(234,179,8,0.5)] animate-pulse'
+                        )} 
+                        style={{ 
+                            fontSize: 'clamp(3rem, 16vh, 14rem)', 
+                            padding: '0 clamp(30px, 6vw, 120px)',
+                            height: '90%',
+                            minWidth: '2.8em'
+                        }}>
                         {fmt(timer)}
                     </div>
                 </div>

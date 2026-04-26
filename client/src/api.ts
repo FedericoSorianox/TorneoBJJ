@@ -8,7 +8,15 @@ const isProd = import.meta.env.PROD;
 export const API_BASE_URL = import.meta.env.VITE_API_URL || (isProd ? '/torneobjj/api' : 'http://localhost:5001/api');
 
 // The socket and image base URL is the root (one level up from /api)
-export const SOCKET_URL = API_BASE_URL.replace(/\/api$/, '');
+// In production, we want the image base to be /torneobjj
+export const SOCKET_URL = import.meta.env.VITE_API_URL 
+    ? import.meta.env.VITE_API_URL.replace(/\/api$/, '') 
+    : (isProd ? '/torneobjj' : 'http://localhost:5001');
+
+// For the actual Socket.io connection, we need the origin to avoid namespace issues
+export const SOCKET_CONNECTION_URL = import.meta.env.VITE_API_URL 
+    ? import.meta.env.VITE_API_URL.replace(/\/api$/, '') 
+    : (isProd ? window.location.origin : 'http://localhost:5001');
 
 const api = axios.create({
     baseURL: API_BASE_URL

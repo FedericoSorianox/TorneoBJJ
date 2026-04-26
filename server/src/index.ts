@@ -57,6 +57,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
+app.use('/torneobjj/uploads', express.static('uploads'));
 
 // API Routes
 const apiRouter = express.Router();
