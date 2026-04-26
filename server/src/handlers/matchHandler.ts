@@ -12,7 +12,7 @@ export const registerMatchHandlers = (io: Server, socket: Socket) => {
         console.log(`Socket ${socket.id} joined match ${matchId}`);
         // Send current state
         try {
-            const match = await Match.findById(matchId);
+            const match = await Match.findById(matchId).populate('athlete1Id athlete2Id');
             if (match) {
                 socket.emit('match_update', match);
             }

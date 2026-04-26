@@ -78,12 +78,12 @@ const ScoreCard = ({
         <div className="flex-1 flex flex-col overflow-hidden">
             {/* Top Part: Name and Main Score (Colored) */}
             <div className={clsx(
-                "flex flex-col transition-colors duration-500",
+                "flex flex-col transition-colors duration-500 pt-[2vh]",
                 isP1 ? 'bg-slate-100 text-slate-950' : 'bg-blue-700 text-white shadow-[inset_0_0_100px_rgba(0,0,0,0.2)]'
             )} style={{ height: '48%' }}>
                 {/* Name / academy */}
                 <div className="flex flex-col items-center justify-center text-center px-2 border-b border-black/5"
-                     style={{ height: '25%' }}>
+                     style={{ height: '30%' }}>
                     <h2 className={clsx("font-black uppercase tracking-tight leading-none truncate w-full", isP1 ? "text-slate-900" : "text-white")}
                         style={{ fontSize: 'clamp(1rem, 3.5vw, 3rem)' }}>
                         {name}
