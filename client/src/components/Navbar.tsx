@@ -7,8 +7,6 @@ const Navbar = () => {
     const { t, language, toggleLanguage } = useLanguage();
     const navigate = useNavigate();
 
-    if (!user) return null;
-
     const handleLogout = () => {
         logout();
         navigate('/login');
@@ -24,31 +22,46 @@ const Navbar = () => {
                         </Link>
                         <div className="hidden md:block">
                             <div className="ml-10 flex items-baseline space-x-4">
-                                <Link to="/tournaments" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-slate-700">{t('nav.tournaments')}</Link>
-                                <Link to="/athletes" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-slate-700">{t('nav.athletes')}</Link>
+                                {user && (
+                                    <>
+                                        <Link to="/tournaments" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-slate-700">{t('nav.tournaments')}</Link>
+                                        <Link to="/athletes" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-slate-700">{t('nav.athletes')}</Link>
+                                    </>
+                                )}
                                 <Link to="/leaderboard" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-slate-700">{t('nav.rankings')}</Link>
                             </div>
                         </div>
                     </div>
                     <div className="hidden md:block">
                         <div className="ml-4 flex items-center md:ml-6">
-                            <span className="text-gray-300 text-sm mr-4">
-                                {user.username} ({user.role})
-                            </span>
-                            {user.role === 'admin' && (
-                                <div className="flex items-center">
-                                    <Link to="/users/new" className="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded mr-4">
-                                        {t('nav.addUser')}
-                                    </Link>
-                                    <span className="text-xs bg-red-600 text-white px-2 py-1 rounded mr-4">Admin</span>
-                                </div>
+                            {user ? (
+                                <>
+                                    <span className="text-gray-300 text-sm mr-4">
+                                        {user.username} ({user.role})
+                                    </span>
+                                    {user.role === 'admin' && (
+                                        <div className="flex items-center">
+                                            <Link to="/users/new" className="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded mr-4">
+                                                {t('nav.addUser')}
+                                            </Link>
+                                            <span className="text-xs bg-red-600 text-white px-2 py-1 rounded mr-4">Admin</span>
+                                        </div>
+                                    )}
+                                    <button
+                                        onClick={handleLogout}
+                                        className="px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                    >
+                                        {t('nav.logout')}
+                                    </button>
+                                </>
+                            ) : (
+                                <Link
+                                    to="/login"
+                                    className="px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                    Login
+                                </Link>
                             )}
-                            <button
-                                onClick={handleLogout}
-                                className="px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                            >
-                                {t('nav.logout')}
-                            </button>
                         </div>
                     </div>
                 </div>

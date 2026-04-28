@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.post('/', protect, admin, upload.single('photo'), createAthlete);
 router.get('/', protect, getAthletes);
-router.get('/leaderboard', protect, getLeaderboard);
+router.get('/leaderboard', getLeaderboard);
 router.get('/:id', protect, getAthleteById);
 router.put('/:id', protect, admin, upload.single('photo'), updateAthlete);
 router.post('/:id/redeem', protect, admin, redeemPoints);
