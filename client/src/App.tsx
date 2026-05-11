@@ -13,7 +13,7 @@ import Login from './pages/Login'
 import UserCreate from './pages/UserCreate'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
-import { AuthProvider } from './contexts/AuthContext'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { useLanguage } from './contexts/LanguageContext';
 
 const Home = () => {
