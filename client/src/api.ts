@@ -81,7 +81,10 @@ export const getBracket = (catId: string) => api.get(`/categories/${catId}/brack
 export const finalizeBracket = (catId: string) => api.post(`/categories/${catId}/finalize`, {}).then(res => res.data);
 
 // Store
-export const getStoreProducts = () => api.get('/store/products').then(res => res.data);
+export const getStoreProducts = (all: boolean = false) => api.get('/store/products', { params: { all } }).then(res => res.data);
+export const createStoreProduct = (data: any) => api.post('/store/products', data).then(res => res.data);
+export const updateStoreProduct = (id: string, data: any) => api.put(`/store/products/${id}`, data).then(res => res.data);
+export const deleteStoreProduct = (id: string) => api.delete(`/store/products/${id}`).then(res => res.data);
 export const redeemStoreProduct = (athleteId: string, productId: string) => api.post('/store/redeem', { athleteId, productId }).then(res => res.data);
 export const getAthleteRedemptions = (athleteId: string) => api.get(`/store/redemptions/${athleteId}`).then(res => res.data);
 
