@@ -32,6 +32,21 @@ api.interceptors.request.use((config) => {
     return Promise.reject(error);
 });
 
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+                // Dispatch event so AuthContext can handle it if needed
+                window.dispatchEvent(new Event('auth:unauthorized'));
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 // Tournaments
 export const getTournaments = () => api.get('/tournaments').then(res => res.data);
 export const getTournamentById = (id: string) => api.get(`/tournaments/${id}`).then(res => res.data);

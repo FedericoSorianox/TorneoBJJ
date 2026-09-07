@@ -35,7 +35,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 localStorage.removeItem('user');
             }
         }
+        const handleUnauthorized = () => {
+            setUser(null);
+            toast.error('Tu sesión ha expirado. Por favor inicia sesión de nuevo.');
+        };
+
+        window.addEventListener('auth:unauthorized', handleUnauthorized);
+
         setIsLoading(false);
+
+        return () => {
+            window.removeEventListener('auth:unauthorized', handleUnauthorized);
+        };
     }, []);
 
     const login = (token: string, userData: User) => {
