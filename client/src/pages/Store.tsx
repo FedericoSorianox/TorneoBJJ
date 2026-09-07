@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { ShoppingBag, Star, Package, CheckCircle, XCircle, Plus, Edit2, Trash2, X, Image as ImageIcon } from 'lucide-react';
+import { ShoppingBag, Star, Package, CheckCircle, XCircle, Plus, Edit2, Trash2, X, Image as ImageIcon, Minus } from 'lucide-react';
 import { getStoreProducts, createStoreProduct, updateStoreProduct, deleteStoreProduct, redeemStoreProduct, getAthletes } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -46,13 +46,17 @@ const Store: React.FC = () => {
     const [athletes, setAthletes] = useState<Athlete[]>([]);
     const [selectedAthlete, setSelectedAthlete] = useState<string>('');
     const [loading, setLoading] = useState(true);
-    const [redeeming, setRedeeming] = useState<string | null>(null);
+    const [redeeming, setRedeeming] = useState<boolean>(false);
 
     // Modal state for Admin product creation / editing
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [formData, setFormData] = useState<ProductFormData>(initialFormState);
     const [submitting, setSubmitting] = useState(false);
+
+    // Modal state for Product Redemption Quantity
+    const [redeemModalProduct, setRedeemModalProduct] = useState<Product | null>(null);
+    const [redeemQuantity, setRedeemQuantity] = useState<number>(1);
 
     useEffect(() => {
         fetchData();
@@ -156,33 +160,50 @@ const Store: React.FC = () => {
         }
     };
 
-    const handleRedeem = async (productId: string, productName: string, cost: number) => {
+    const handleOpenRedeemModal = (product: Product) => {
         if (!selectedAthlete) {
             toast.error('Por favor, selecciona un atleta primero');
             return;
         }
+        setRedeemModalProduct(product);
+        setRedeemQuantity(1);
+    };
+
+    const handleCloseRedeemModal = () => {
+        setRedeemModalProduct(null);
+        setRedeemQuantity(1);
+    };
+
+    const handleConfirmRedeem = async () => {
+        if (!redeemModalProduct || !selectedAthlete) return;
 
         const athlete = athletes.find(a => a._id === selectedAthlete);
-        if (athlete && athlete.balance < cost) {
-            toast.error(`Puntos insuficientes. Tiene ${athlete.balance} pts, necesita ${cost} pts.`);
+        const totalPoints = redeemModalProduct.pointsCost * redeemQuantity;
+
+        if (athlete && athlete.balance < totalPoints) {
+            toast.error(`Puntos insuficientes. Tiene ${athlete.balance} pts, necesita ${totalPoints} pts.`);
             return;
         }
 
-        if (!window.confirm(`¿Confirmas el canje de "${productName}" por ${cost} puntos?`)) return;
+        if (redeemQuantity > redeemModalProduct.stock) {
+            toast.error(`Stock insuficiente. Stock disponible: ${redeemModalProduct.stock}`);
+            return;
+        }
 
-        setRedeeming(productId);
+        setRedeeming(true);
         try {
-            const result = await redeemStoreProduct(selectedAthlete, productId);
-            toast.success('¡Canje realizado con éxito!');
+            const result = await redeemStoreProduct(selectedAthlete, redeemModalProduct._id, redeemQuantity);
+            toast.success(`¡Canje de ${redeemQuantity} unidad(es) de "${redeemModalProduct.name}" realizado con éxito!`);
             setAthletes(prev =>
                 prev.map(a => a._id === selectedAthlete ? { ...a, balance: result.balance } : a)
             );
+            handleCloseRedeemModal();
             const prods = await getStoreProducts(isAdmin);
             setProducts(prods);
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Error al realizar el canje');
         } finally {
-            setRedeeming(null);
+            setRedeeming(false);
         }
     };
 
@@ -260,7 +281,6 @@ const Store: React.FC = () => {
                 ) : (
                     products.map(product => {
                         const canAfford = currentAthlete ? currentAthlete.balance >= product.pointsCost : false;
-                        const isLoading = redeeming === product._id;
                         const isOutOfStock = product.stock <= 0;
                         const isInactive = product.isActive === false;
 
@@ -338,15 +358,15 @@ const Store: React.FC = () => {
                                             Stock: {product.stock}
                                         </span>
                                         <button
-                                            onClick={() => handleRedeem(product._id, product.name, product.pointsCost)}
-                                            disabled={!selectedAthlete || !canAfford || isLoading || isOutOfStock || isInactive}
+                                            onClick={() => handleOpenRedeemModal(product)}
+                                            disabled={!selectedAthlete || !canAfford || isOutOfStock || isInactive}
                                             className={`px-5 py-2 rounded-lg font-bold transition-all ${
-                                                !selectedAthlete || !canAfford || isLoading || isOutOfStock || isInactive
+                                                !selectedAthlete || !canAfford || isOutOfStock || isInactive
                                                     ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
                                                     : 'bg-blue-600 text-white hover:bg-blue-500 hover:shadow-lg active:scale-95 cursor-pointer'
                                             }`}
                                         >
-                                            {isLoading ? 'Canjeando...' : isOutOfStock ? 'Sin Stock' : 'Canjear'}
+                                            {isOutOfStock ? 'Sin Stock' : 'Canjear'}
                                         </button>
                                     </div>
                                 </div>
@@ -380,6 +400,183 @@ const Store: React.FC = () => {
                     </li>
                 </ul>
             </section>
+
+            {/* Modal para Seleccionar Cantidad y Confirmar Canje */}
+            {redeemModalProduct && currentAthlete && (
+                <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="flex items-center justify-between p-6 border-b border-slate-700 bg-slate-900/50">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                <ShoppingBag className="w-6 h-6 text-blue-400" />
+                                Confirmar Canje
+                            </h2>
+                            <button
+                                onClick={handleCloseRedeemModal}
+                                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                            <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700 flex gap-4 items-center">
+                                <div className="w-16 h-16 bg-slate-800 rounded-lg flex items-center justify-center shrink-0 border border-slate-700 overflow-hidden">
+                                    {redeemModalProduct.image ? (
+                                        <img src={redeemModalProduct.image} alt={redeemModalProduct.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <ShoppingBag className="w-8 h-8 text-slate-500" />
+                                    )}
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-white text-lg leading-tight">{redeemModalProduct.name}</h3>
+                                    <p className="text-sm text-blue-400 font-semibold">{redeemModalProduct.pointsCost} PTS por unidad</p>
+                                    <p className="text-xs text-slate-400 mt-1">Stock disponible: {redeemModalProduct.stock}</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                    Atleta Seleccionado
+                                </label>
+                                <div className="bg-slate-900/40 p-3 rounded-lg border border-slate-700/80 flex items-center justify-between">
+                                    <span className="font-bold text-white">{currentAthlete.name}</span>
+                                    <span className="text-yellow-500 font-bold text-sm flex items-center gap-1">
+                                        <Star className="w-4 h-4 fill-current" />
+                                        {currentAthlete.balance} pts
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Selector de Cantidad */}
+                            <div className="space-y-2">
+                                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                                    Cantidad a Canjear
+                                </label>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setRedeemQuantity(prev => Math.max(1, prev - 1))}
+                                        disabled={redeemQuantity <= 1}
+                                        className="w-12 h-12 bg-slate-900 border border-slate-700 hover:border-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-xl disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all active:scale-95"
+                                    >
+                                        <Minus className="w-5 h-5" />
+                                    </button>
+
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max={redeemModalProduct.stock}
+                                        value={redeemQuantity}
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value, 10);
+                                            if (isNaN(val)) setRedeemQuantity(1);
+                                            else setRedeemQuantity(Math.max(1, val));
+                                        }}
+                                        className="flex-1 bg-slate-900 border border-slate-700 text-center text-2xl font-black text-white rounded-xl py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                    />
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setRedeemQuantity(prev => Math.min(redeemModalProduct.stock, prev + 1))}
+                                        disabled={redeemQuantity >= redeemModalProduct.stock}
+                                        className="w-12 h-12 bg-slate-900 border border-slate-700 hover:border-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-xl disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all active:scale-95"
+                                    >
+                                        <Plus className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                {/* Botones de Selección Rápida */}
+                                {redeemModalProduct.stock > 1 && (
+                                    <div className="flex gap-2 pt-2">
+                                        {[1, 5, 10, 50, 100].filter(n => n <= redeemModalProduct.stock).map(n => (
+                                            <button
+                                                key={n}
+                                                type="button"
+                                                onClick={() => setRedeemQuantity(n)}
+                                                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                                                    redeemQuantity === n
+                                                        ? 'bg-blue-600 text-white'
+                                                        : 'bg-slate-900 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                                                }`}
+                                            >
+                                                {n}
+                                            </button>
+                                        ))}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const maxByBalance = Math.floor(currentAthlete.balance / redeemModalProduct.pointsCost);
+                                                const maxPossible = Math.max(1, Math.min(redeemModalProduct.stock, maxByBalance > 0 ? maxByBalance : redeemModalProduct.stock));
+                                                setRedeemQuantity(maxPossible);
+                                            }}
+                                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-900 hover:bg-slate-700 text-yellow-400 border border-slate-700 cursor-pointer"
+                                        >
+                                            Máx
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Resumen del Canje */}
+                            <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-700 space-y-2">
+                                <div className="flex justify-between text-sm text-slate-400">
+                                    <span>Puntos por unidad:</span>
+                                    <span>{redeemModalProduct.pointsCost} pts</span>
+                                </div>
+                                <div className="flex justify-between text-sm text-slate-400">
+                                    <span>Cantidad:</span>
+                                    <span>{redeemQuantity}</span>
+                                </div>
+                                <div className="flex justify-between text-base font-bold text-white pt-2 border-t border-slate-800">
+                                    <span>Total a Descontar:</span>
+                                    <span className="text-yellow-400">{redeemModalProduct.pointsCost * redeemQuantity} PTS</span>
+                                </div>
+                                <div className="flex justify-between text-xs text-slate-400 pt-1">
+                                    <span>Balance restante:</span>
+                                    <span className={currentAthlete.balance < (redeemModalProduct.pointsCost * redeemQuantity) ? 'text-red-400 font-bold' : 'text-slate-300'}>
+                                        {currentAthlete.balance - (redeemModalProduct.pointsCost * redeemQuantity)} pts
+                                    </span>
+                                </div>
+                            </div>
+
+                            {currentAthlete.balance < (redeemModalProduct.pointsCost * redeemQuantity) && (
+                                <p className="text-xs font-bold text-red-400 bg-red-950/50 p-2.5 rounded-lg border border-red-800 text-center">
+                                    ⚠️ Puntos insuficientes para canjear esta cantidad.
+                                </p>
+                            )}
+
+                            {redeemQuantity > redeemModalProduct.stock && (
+                                <p className="text-xs font-bold text-red-400 bg-red-950/50 p-2.5 rounded-lg border border-red-800 text-center">
+                                    ⚠️ La cantidad supera el stock disponible ({redeemModalProduct.stock}).
+                                </p>
+                            )}
+
+                            <div className="flex justify-end gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={handleCloseRedeemModal}
+                                    className="px-4 py-2.5 rounded-lg font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors cursor-pointer"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmRedeem}
+                                    disabled={
+                                        redeeming ||
+                                        redeemQuantity < 1 ||
+                                        redeemQuantity > redeemModalProduct.stock ||
+                                        currentAthlete.balance < (redeemModalProduct.pointsCost * redeemQuantity)
+                                    }
+                                    className="px-6 py-2.5 rounded-lg font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    {redeeming ? 'Procesando...' : `Confirmar Canje (${redeemModalProduct.pointsCost * redeemQuantity} PTS)`}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modal para Crear / Editar Producto */}
             {isModalOpen && (

@@ -85,7 +85,7 @@ export const getStoreProducts = (all: boolean = false) => api.get('/store/produc
 export const createStoreProduct = (data: any) => api.post('/store/products', data).then(res => res.data);
 export const updateStoreProduct = (id: string, data: any) => api.put(`/store/products/${id}`, data).then(res => res.data);
 export const deleteStoreProduct = (id: string) => api.delete(`/store/products/${id}`).then(res => res.data);
-export const redeemStoreProduct = (athleteId: string, productId: string) => api.post('/store/redeem', { athleteId, productId }).then(res => res.data);
+export const redeemStoreProduct = (athleteId: string, productId: string, quantity: number = 1) => api.post('/store/redeem', { athleteId, productId, quantity }).then(res => res.data);
 export const getAthleteRedemptions = (athleteId: string) => api.get(`/store/redemptions/${athleteId}`).then(res => res.data);
 
 // Auth

@@ -50,6 +50,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
 export const redeemProduct = async (req: Request, res: Response) => {
     try {
         const { athleteId, productId } = req.body;
+        const quantity = Math.max(1, parseInt(req.body.quantity, 10) || 1);
 
         // 1. Fetch both documents first and validate BEFORE any mutation
         const [athlete, product] = await Promise.all([
@@ -59,34 +60,39 @@ export const redeemProduct = async (req: Request, res: Response) => {
 
         if (!athlete) return res.status(404).json({ error: 'Atleta no encontrado' });
         if (!product) return res.status(404).json({ error: 'Producto no encontrado' });
-        if (product.stock <= 0) return res.status(400).json({ error: 'Producto sin stock' });
-        if (athlete.balance < product.pointsCost) {
+
+        const totalPointsCost = product.pointsCost * quantity;
+
+        if (product.stock < quantity) {
+            return res.status(400).json({ error: `Stock insuficiente. Stock disponible: ${product.stock}, solicitado: ${quantity}` });
+        }
+        if (athlete.balance < totalPointsCost) {
             return res.status(400).json({ 
-                error: `Puntos insuficientes. Tiene ${athlete.balance} pts, necesita ${product.pointsCost} pts.` 
+                error: `Puntos insuficientes. Tiene ${athlete.balance} pts, necesita ${totalPointsCost} pts.` 
             });
         }
 
         // 2. Deduct stock atomically using $inc + conditions to prevent race conditions
         const updatedProduct = await Product.findOneAndUpdate(
-            { _id: productId, stock: { $gt: 0 } }, // Guard: only if stock > 0
-            { $inc: { stock: -1 } },
+            { _id: productId, stock: { $gte: quantity } }, // Guard: stock >= quantity
+            { $inc: { stock: -quantity } },
             { new: true }
         );
 
         if (!updatedProduct) {
-            return res.status(400).json({ error: 'El producto se agotó justo ahora. Intenta de nuevo.' });
+            return res.status(400).json({ error: 'El stock disponible cambió justo ahora. Intenta de nuevo.' });
         }
 
         // 3. Deduct points atomically using $inc + condition guard
         const updatedAthlete = await Athlete.findOneAndUpdate(
-            { _id: athleteId, balance: { $gte: product.pointsCost } }, // Guard: only if enough balance
-            { $inc: { balance: -product.pointsCost } },
+            { _id: athleteId, balance: { $gte: totalPointsCost } }, // Guard: balance >= totalPointsCost
+            { $inc: { balance: -totalPointsCost } },
             { new: true }
         );
 
         if (!updatedAthlete) {
             // Rollback stock if points deduction failed
-            await Product.findByIdAndUpdate(productId, { $inc: { stock: 1 } });
+            await Product.findByIdAndUpdate(productId, { $inc: { stock: quantity } });
             return res.status(400).json({ error: 'Error al descontar puntos. Operación revertida.' });
         }
 
@@ -94,7 +100,8 @@ export const redeemProduct = async (req: Request, res: Response) => {
         await Redemption.create({
             athleteId,
             productId,
-            pointsSpent: product.pointsCost,
+            quantity,
+            pointsSpent: totalPointsCost,
             status: 'pending'
         });
 
