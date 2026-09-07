@@ -11,6 +11,7 @@ import BracketView from './pages/BracketView'
 import Leaderboard from './pages/Leaderboard'
 import Login from './pages/Login'
 import UserCreate from './pages/UserCreate'
+import Store from './pages/Store'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -58,6 +59,7 @@ function App() {
                 <Route path="/athletes" element={<AthleteManager />} />
                 <Route path="/bracket/:id" element={<BracketView />} />
                 <Route path="/users/new" element={<UserCreate />} />
+                <Route path="/store" element={<Store />} />
               </Route>
             </Routes>
           </div>

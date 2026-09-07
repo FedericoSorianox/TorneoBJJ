@@ -26,6 +26,7 @@ const Navbar = () => {
                                     <>
                                         <Link to="/tournaments" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-slate-700">{t('nav.tournaments')}</Link>
                                         <Link to="/athletes" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-slate-700">{t('nav.athletes')}</Link>
+                                        <Link to="/store" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-slate-700">{t('nav.store')}</Link>
                                     </>
                                 )}
                                 <Link to="/leaderboard" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-slate-700">{t('nav.rankings')}</Link>

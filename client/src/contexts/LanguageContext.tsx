@@ -14,6 +14,7 @@ const translations: Record<Language, Record<string, string>> = {
         'nav.tournaments': 'Tournaments',
         'nav.athletes': 'Athletes',
         'nav.rankings': 'Rankings',
+        'nav.store': 'Store',
 
         'common.loading': 'Loading...',
         'common.back': 'Back',
@@ -128,6 +129,7 @@ const translations: Record<Language, Record<string, string>> = {
         'nav.tournaments': 'Torneos',
         'nav.athletes': 'Atletas',
         'nav.rankings': 'Rankings',
+        'nav.store': 'Tienda',
 
         'common.loading': 'Cargando...',
         'common.back': 'Volver',

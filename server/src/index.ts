@@ -13,6 +13,7 @@ import matchRoutes from './routes/matchRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import authRoutes from './routes/authRoutes';
 import ruleSetRoutes from './routes/ruleSetRoutes';
+import storeRoutes from './routes/storeRoutes';
 import { registerMatchHandlers } from './handlers/matchHandler';
 import { seedAdmin } from './utils/seedAdmin';
 
@@ -67,6 +68,7 @@ apiRouter.use('/matches', matchRoutes);
 apiRouter.use('/categories', categoryRoutes);
 apiRouter.use('/auth', authRoutes);
 apiRouter.use('/rulesets', ruleSetRoutes);
+apiRouter.use('/store', storeRoutes);
 
 apiRouter.get('/leaderboard', (req, res) => {
     res.redirect('/athletes/leaderboard');
@@ -158,7 +160,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 // Robust port detection (both uppercase and lowercase)
-const PORT = Number(process.env.PORT || process.env.port || 5001);
+const PORT = Number(process.env.PORT || process.env.port || 5002);
 
 // Startup Function
 const startServer = async () => {

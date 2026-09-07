@@ -5,18 +5,18 @@ const isProd = import.meta.env.PROD;
 
 // If VITE_API_URL is provided, use it. 
 // Otherwise, default to relative path in production, and localhost in development.
-export const API_BASE_URL = import.meta.env.VITE_API_URL || (isProd ? '/torneobjj/api' : 'http://localhost:5001/api');
+export const API_BASE_URL = import.meta.env.VITE_API_URL || (isProd ? '/torneobjj/api' : 'http://localhost:5002/api');
 
 // The socket and image base URL is the root (one level up from /api)
 // In production, we want the image base to be /torneobjj
 export const SOCKET_URL = import.meta.env.VITE_API_URL 
     ? import.meta.env.VITE_API_URL.replace(/\/api$/, '') 
-    : (isProd ? '/torneobjj' : 'http://localhost:5001');
+    : (isProd ? '/torneobjj' : 'http://localhost:5002');
 
 // For the actual Socket.io connection, we need the origin to avoid namespace issues
 export const SOCKET_CONNECTION_URL = import.meta.env.VITE_API_URL 
     ? import.meta.env.VITE_API_URL.replace(/\/api$/, '') 
-    : (isProd ? window.location.origin : 'http://localhost:5001');
+    : (isProd ? window.location.origin : 'http://localhost:5002');
 
 const api = axios.create({
     baseURL: API_BASE_URL
@@ -64,6 +64,11 @@ export const updateCategoryDuration = (categoryId: string, durationSeconds: numb
 export const generateBracket = (categoryId: string) => api.post(`/categories/${categoryId}/bracket`).then(res => res.data);
 export const getBracket = (catId: string) => api.get(`/categories/${catId}/bracket`).then(res => res.data);
 export const finalizeBracket = (catId: string) => api.post(`/categories/${catId}/finalize`, {}).then(res => res.data);
+
+// Store
+export const getStoreProducts = () => api.get('/store/products').then(res => res.data);
+export const redeemStoreProduct = (athleteId: string, productId: string) => api.post('/store/redeem', { athleteId, productId }).then(res => res.data);
+export const getAthleteRedemptions = (athleteId: string) => api.get(`/store/redemptions/${athleteId}`).then(res => res.data);
 
 // Auth
 export const registerUser = (data: any) => api.post('/auth/register', data).then(res => res.data);
